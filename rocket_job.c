@@ -625,14 +625,35 @@ int rocket_job_open(struct rocket_file_priv *rocket_priv)
 
 void rocket_job_close(struct rocket_file_priv *rocket_priv)
 {
+	struct rocket_device *rdev = rocket_priv->rdev;
 	struct drm_sched_entity *entity = &rocket_priv->sched_entity;
 	unsigned int core;
 
-	for (core = 0; core < rocket_priv->rdev->num_cores && core < 3; core++)
+	for (core = 0; core < rdev->num_cores && core < 3; core++)
 		drm_sched_entity_destroy(&rocket_priv->core_entity[core]);
 
 	kfree(entity->sched_list);
 	drm_sched_entity_destroy(entity);
+
+	/*
+	 * The attach-once optimization (rocket_job_run) leaves this file's IOMMU
+	 * domain attached to whatever cores last ran its jobs, detaching only on
+	 * reset. The entities are now destroyed so no further jobs will run;
+	 * detach the domain from any core still holding it before rocket_postclose
+	 * frees it. Skipping this frees the domain while it is still attached
+	 * (rk_iommu_domain_free WARN) and leaves core->attached_domain dangling ->
+	 * use-after-free / panic when the next client's job touches it.
+	 */
+	for (core = 0; core < rdev->num_cores; core++) {
+		struct rocket_core *rcore = &rdev->cores[core];
+
+		scoped_guard(mutex, &rcore->job_lock) {
+			if (rcore->attached_domain == rocket_priv->domain) {
+				iommu_detach_group(NULL, rcore->iommu_group);
+				rcore->attached_domain = NULL;
+			}
+		}
+	}
 }
 
 int rocket_job_is_idle(struct rocket_core *core)
