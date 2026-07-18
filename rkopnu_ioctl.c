@@ -17,7 +17,7 @@ int rkopnu_ioctl_action(struct drm_device *dev, void *data, struct drm_file *fil
 
 	switch (args->flags) {
 	case RKNPU_GET_HW_VERSION:
-		args->value = 0; /* FIXME: reg read once core base is wired (Phase 3) */
+		args->value = 1179210309u; /* RK3588 rknpu core version (from dmesg); Phase 3: read live from reg */
 		return 0;
 	case RKNPU_GET_DRV_VERSION:
 		args->value = RKNPU_GET_DRV_VERSION_CODE(0, 9, 8);
