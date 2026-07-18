@@ -109,22 +109,31 @@ fail:
 
 static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *job)
 {
-	/* Don't queue the job if a reset is in progress */
+	unsigned int extra_bit;
+
 	if (atomic_read(&core->reset.pending))
 		return;
 
 	job->next_task_idx++;
 
 	/*
-	 * rkopnu: program the PC block exactly like the vendor
-	 * rknpu_job_subcore_commit_pc() for RK3588 (pc_data_amount_scale=2,
-	 * RKNPU_PC_DATA_EXTRA_AMOUNT=4, pc_task_number_bits=12, pc_dma_ctrl=0).
-	 * One program runs the whole [task_start, task_end] range.
+	 * rkopnu: enable the PP pipeline (rocket's CNA/CORE S_POINTER writes are
+	 * the vendor rknpu enable writes; extra_bit = 0x10000000*core selects the
+	 * core), then program the PC block exactly like rknpu_job_subcore_commit_pc
+	 * for RK3588 (scale=2, extra=4, task_number_bits=12). One program runs the
+	 * whole [task_start, task_end] range.
 	 */
+	rocket_pc_writel(core, BASE_ADDRESS, 0x1);
 
-	/* per-core enable (num_irqs>1 path) */
-	writel(0xe + 0x10000000u * core->index, core->pc_iomem + 0x1004);
-	writel(0xe + 0x10000000u * core->index, core->pc_iomem + 0x3004);
+	extra_bit = 0x10000000 * core->index;
+	rocket_cna_writel(core, S_POINTER, CNA_S_POINTER_POINTER_PP_EN(1) |
+					   CNA_S_POINTER_EXECUTER_PP_EN(1) |
+					   CNA_S_POINTER_POINTER_PP_MODE(1) |
+					   extra_bit);
+	rocket_core_writel(core, S_POINTER, CORE_S_POINTER_POINTER_PP_EN(1) |
+					    CORE_S_POINTER_EXECUTER_PP_EN(1) |
+					    CORE_S_POINTER_POINTER_PP_MODE(1) |
+					    extra_bit);
 
 	rocket_pc_writel(core, BASE_ADDRESS, (u32)job->rk_regcmd_addr);
 	rocket_pc_writel(core, REGISTER_AMOUNTS,
@@ -135,11 +144,10 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 			 ((0x6 | job->rk_pp_en) << 12) | job->rk_task_number);
 	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, (u32)job->rk_task_base_addr);
 
-	/* start pulse: OP_EN 1 -> 0 */
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 
-	dev_dbg(core->dev, "rkopnu: submitted regcmd 0x%llx (%u tasks) to core %d",
+	dev_dbg(core->dev, "rkopnu: regcmd 0x%llx (%u tasks) core %d",
 		job->rk_regcmd_addr, job->rk_task_number, core->index);
 }
 
