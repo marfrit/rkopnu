@@ -138,8 +138,8 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 	rocket_pc_writel(core, BASE_ADDRESS, (u32)job->rk_regcmd_addr);
 	rocket_pc_writel(core, REGISTER_AMOUNTS,
 			 (job->rk_regcfg_amount + 4 + 2 - 1) / 2 - 1);
-	rocket_pc_writel(core, INTERRUPT_MASK, job->rk_int_mask);
-	rocket_pc_writel(core, INTERRUPT_CLEAR, job->rk_int_clear);
+	rocket_pc_writel(core, INTERRUPT_MASK, 0xc0000000); /* NPU raises done on bits 30/31 */
+	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
 	rocket_pc_writel(core, TASK_CON,
 			 ((0x6 | job->rk_pp_en) << 12) | job->rk_task_number);
 	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, (u32)job->rk_task_base_addr);
@@ -344,7 +344,7 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 	 * delay, not this core's own completion time.
 	 */
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
-	rocket_pc_writel(core, INTERRUPT_CLEAR, 0x1ffff);
+	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
 
 	scoped_guard(mutex, &core->job_lock)
 		if (core->in_flight_job) {
