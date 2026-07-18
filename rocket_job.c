@@ -8,6 +8,8 @@
 #include <drm/drm_gem.h>
 #include <drm/rocket_accel.h>
 #include <linux/interrupt.h>
+#include <linux/ktime.h>
+#include <linux/atomic.h>
 #include <linux/iommu.h>
 #include <linux/platform_device.h>
 
@@ -23,10 +25,36 @@
 
 #define JOB_TIMEOUT_MS 500
 
+/* rkopnu perf-trace: accumulate per-submit latency segments, dump every 512
+ * completions. worker = push->run (drm_sched worker bounce); npu = run->hardirq
+ * (submit + NPU compute); thread = hardirq->bottom-half (threaded-IRQ bounce). */
+static atomic64_t dbg_n;
+static atomic64_t dbg_worker_ns;
+static atomic64_t dbg_npu_ns;
+static atomic64_t dbg_thread_ns;
+
 static struct rocket_job *
 to_rocket_job(struct drm_sched_job *sched_job)
 {
 	return container_of(sched_job, struct rocket_job, base);
+}
+
+/*
+ * rkopnu: map a core_mask to the physical core index the job commits to
+ * (vendor rknpu_wait_core_index). CORE0=1, CORE1=2, CORE2=4. Multi-core masks
+ * (0x3 / 0x7) commit their first PC to core 0; the sibling cores are driven
+ * from the same job via subcore_task[] on core 0's completion path.
+ */
+static int rknpu_wait_core_index(u32 core_mask)
+{
+	switch (core_mask) {
+	case 0x2: /* CORE1 only */
+		return 1;
+	case 0x4: /* CORE2 only */
+		return 2;
+	default:  /* CORE0, 0x3, 0x7, AUTO(0) -> core 0 */
+		return 0;
+	}
 }
 
 static const char *rocket_fence_get_driver_name(struct dma_fence *fence)
@@ -128,7 +156,12 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 		ts = job->rk_subcore[ci].task_start;
 		tn = job->rk_subcore[ci].task_number;
 	}
-	if (tn == 0) { /* fallback: single-range submit */
+	/* Fall back to the whole-job range if the subcore slot is empty or its
+	 * range escapes the job's declared [task_start, task_start+task_number).
+	 * Defends against reading an unfilled/garbage subcore_task[] slot, which
+	 * would index rk_tasks[] out of the vmap'd BO and oops. */
+	if (tn == 0 || ts < job->rk_task_start ||
+	    ts + tn > job->rk_task_start + job->rk_task_number) {
 		ts = job->rk_task_start;
 		tn = job->rk_task_number;
 	}
@@ -156,8 +189,10 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 
-	dev_err(core->dev, "rkopnu HWSUB core%d ts=%d tn=%d regcmd=0x%llx amount=%u imask=0x%x",
-		ci, ts, tn, first->regcmd_addr, first->regcfg_amount, last->int_mask);
+	if ((atomic64_read(&dbg_n) < 12))
+		dev_err(core->dev, "rkopnu HWSUB core%d mask=0x%x ncore=%u ts=%d tn=%d amount=%u imask=0x%x",
+			ci, job->rk_core_mask, job->rk_use_core_num, ts, tn,
+			first->regcfg_amount, last->int_mask);
 }
 
 static int rocket_acquire_object_fences(struct drm_gem_object **bos,
@@ -222,6 +257,7 @@ static int rocket_job_push(struct rocket_job *job)
 
 		kref_get(&job->refcount); /* put by scheduler job completion */
 
+		job->t_push = ktime_get_ns();
 		drm_sched_entity_push_job(&job->base);
 	}
 
@@ -343,6 +379,8 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 
 	scoped_guard(mutex, &core->job_lock) {
 		core->in_flight_job = job;
+		core->t_run = ktime_get_ns();
+		atomic64_add(core->t_run - job->t_push, &dbg_worker_ns);
 		rocket_job_hw_submit(core, job);
 	}
 
@@ -359,6 +397,9 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 	 * meaningful "unit went idle" timestamp for the shared autosuspend
 	 * delay, not this core's own completion time.
 	 */
+	/* rkopnu perf-trace: threaded-IRQ bounce = hard-IRQ -> bottom-half. */
+	atomic64_add(ktime_get_ns() - core->t_hardirq, &dbg_thread_ns);
+
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
 
@@ -373,6 +414,17 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 			dma_fence_signal(core->in_flight_job->done_fence);
 			rocket_device_pm_put(core->rdev);
 			core->in_flight_job = NULL;
+
+			/* rkopnu perf-trace: dump averages every 512 completions */
+			if ((atomic64_inc_return(&dbg_n) & 511) == 0) {
+				s64 n = atomic64_read(&dbg_n);
+				dev_err(core->dev,
+					"rkopnu-trace n=%lld avg(us): worker=%lld npu=%lld thread=%lld",
+					n,
+					atomic64_read(&dbg_worker_ns) / n / 1000,
+					atomic64_read(&dbg_npu_ns) / n / 1000,
+					atomic64_read(&dbg_thread_ns) / n / 1000);
+			}
 		}
 }
 
@@ -470,6 +522,9 @@ static irqreturn_t rocket_job_irq_handler(int irq, void *data)
 	if (!raw_status)
 		return IRQ_NONE;
 
+	core->t_hardirq = ktime_get_ns();
+	atomic64_add(core->t_hardirq - core->t_run, &dbg_npu_ns);
+
 	rocket_pc_writel(core, INTERRUPT_MASK, 0x0);
 
 	return IRQ_WAKE_THREAD;
@@ -553,12 +608,28 @@ int rocket_job_open(struct rocket_file_priv *rocket_priv)
 	if (WARN_ON(ret))
 		return ret;
 
+	/* rkopnu: per-core entities so a SUBMIT can be pinned to the core
+	 * selected by core_mask (see rocket_file_priv::core_entity). */
+	for (core = 0; core < rdev->num_cores && core < 3; core++) {
+		struct drm_gpu_scheduler *sched = &rdev->cores[core].sched;
+
+		ret = drm_sched_entity_init(&rocket_priv->core_entity[core],
+					    DRM_SCHED_PRIORITY_NORMAL,
+					    &sched, 1, NULL);
+		if (WARN_ON(ret))
+			return ret;
+	}
+
 	return 0;
 }
 
 void rocket_job_close(struct rocket_file_priv *rocket_priv)
 {
 	struct drm_sched_entity *entity = &rocket_priv->sched_entity;
+	unsigned int core;
+
+	for (core = 0; core < rocket_priv->rdev->num_cores && core < 3; core++)
+		drm_sched_entity_destroy(&rocket_priv->core_entity[core]);
 
 	kfree(entity->sched_list);
 	drm_sched_entity_destroy(entity);
@@ -693,6 +764,7 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	struct drm_gem_object *task_gem;
 	struct rknpu_task *tasks;
 	struct rocket_job *rjob;
+	struct iosys_map map;
 	int ret;
 
 	if (args->task_number == 0)
@@ -702,31 +774,34 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (!task_gem)
 		return -EINVAL;
 
-	/* rkopnu perf: reuse the cached kernel vmap if this is the same task BO
-	 * as last SUBMIT (librknnrt keeps one for the session). Only (re)vmap on
-	 * a BO change -- avoids ~2330 PTE rebuilds per prefill. */
-	if (file_priv->task_vmap_gem != task_gem) {
-		if (file_priv->task_vmap_gem) {
-			drm_gem_vunmap(file_priv->task_vmap_gem, &file_priv->task_vmap);
-			drm_gem_object_put(file_priv->task_vmap_gem);
-			file_priv->task_vmap_gem = NULL;
-		}
-		ret = drm_gem_vmap(task_gem, &file_priv->task_vmap);
-		if (ret)
-			return ret;
-		drm_gem_object_get(task_gem);
-		file_priv->task_vmap_gem = task_gem;
-	}
-	tasks = (struct rknpu_task *)file_priv->task_vmap.vaddr;
+	/* Map the task BO for this submit only. librknnrt drives the 3 cores from
+	 * concurrent threads, each with its own task BO, so a shared per-file vmap
+	 * cache races (one thread's vunmap strands another's in-flight rk_tasks).
+	 * The ioctl blocks on the fence below until the job completes, so this
+	 * per-submit mapping stays valid across the worker's hw_submit. */
+	ret = drm_gem_vmap(task_gem, &map);
+	if (ret)
+		return ret;
+	tasks = (struct rknpu_task *)map.vaddr;
 
 	rjob = kzalloc_obj(*rjob);
-	if (!rjob)
-		return -ENOMEM;
+	if (!rjob) {
+		ret = -ENOMEM;
+		goto out_vunmap;
+	}
 	kref_init(&rjob->refcount);
 	rjob->rdev = rdev;
 
-	ret = drm_sched_job_init(&rjob->base, &file_priv->sched_entity, 1, NULL,
-				 file->client_id);
+	/* Pin to the physical core selected by core_mask so hw_submit reads the
+	 * matching subcore_task[] slot (see rocket_file_priv::core_entity). */
+	{
+		int ci = rknpu_wait_core_index(args->core_mask);
+
+		if (ci >= rdev->num_cores)
+			ci = 0;
+		ret = drm_sched_job_init(&rjob->base, &file_priv->core_entity[ci],
+					 1, NULL, file->client_id);
+	}
 	if (ret)
 		goto out_put_job;
 
@@ -760,5 +835,7 @@ out_cleanup:
 		drm_sched_job_cleanup(&rjob->base);
 out_put_job:
 	rocket_job_put(rjob);
+out_vunmap:
+	drm_gem_vunmap(task_gem, &map);
 	return ret;
 }

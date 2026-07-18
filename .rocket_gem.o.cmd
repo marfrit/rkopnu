@@ -1225,6 +1225,9 @@ deps_rocket_gem.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/gpu_scheduler.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/spsc_queue.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-fence.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/iosys-map.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/io.h \
+    $(wildcard include/config/STRICT_DEVMEM) \
   rocket_device.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/clk.h \
     $(wildcard include/config/COMMON_CLK) \
@@ -1235,8 +1238,6 @@ deps_rocket_gem.o := \
     $(wildcard include/config/HIBERNATE_CALLBACKS) \
     $(wildcard include/config/SUPERH) \
   rocket_core.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/io.h \
-    $(wildcard include/config/STRICT_DEVMEM) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/reset.h \
     $(wildcard include/config/RESET_CONTROLLER) \
   rocket_registers.h \
@@ -1246,7 +1247,6 @@ deps_rocket_gem.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_prime.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_gem.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-buf.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/iosys-map.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/file.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/pci-p2pdma.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/pci.h \

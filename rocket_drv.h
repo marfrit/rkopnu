@@ -26,12 +26,12 @@ struct rocket_file_priv {
 
 	struct drm_sched_entity sched_entity;
 
-	/* rkopnu perf: cache the kernel vmap of the librknnrt task BO. It reuses
-	 * one task BO across the whole session; re-vmapping it every SUBMIT
-	 * rebuilds its kernel PTEs ~2330x/prefill. Keyed on the gem pointer;
-	 * holds a gem reference so the mapping can't be freed under us. */
-	struct drm_gem_object *task_vmap_gem;
-	struct iosys_map task_vmap;
+	/* rkopnu correctness: one drm_sched entity bound to each single core, so a
+	 * SUBMIT is pinned to the physical core selected by core_mask (the vendor
+	 * commits the PC to that exact core, whose subcore_task[] slot is the only
+	 * one librknnrt filled). Letting drm_sched pick an arbitrary core reads the
+	 * wrong subcore slot -> out-of-bounds task index -> oops. */
+	struct drm_sched_entity core_entity[3];
 };
 
 struct rocket_iommu_domain *rocket_iommu_domain_get(struct rocket_file_priv *rocket_priv);
