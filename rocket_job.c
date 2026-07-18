@@ -352,7 +352,7 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 	 * delay, not this core's own completion time.
 	 */
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
-	rocket_pc_writel(core, INTERRUPT_CLEAR, 0x1ffff);
+	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
 
 	scoped_guard(mutex, &core->job_lock)
 		if (core->in_flight_job) {
@@ -406,12 +406,21 @@ static enum drm_gpu_sched_stat rocket_job_timedout(struct drm_sched_job *sched_j
 	struct rocket_device *rdev = job->rdev;
 	struct rocket_core *core = sched_to_core(rdev, sched_job->sched);
 
-	dev_err(core->dev, "NPU job timed out; int_raw=0x%x int_status=0x%x",
+	dev_err(core->dev, "NPU job timed out (#%u); int_raw=0x%x int_status=0x%x",
+		job->timeout_count + 1,
 		rocket_pc_readl(core, INTERRUPT_RAW_STATUS),
 		rocket_pc_readl(core, INTERRUPT_STATUS));
 
 	atomic_set(&core->reset.pending, 1);
 	rocket_reset(core, sched_job);
+
+	/* Defense-in-depth: don't retry a stuck job forever (that races teardown
+	 * -> drm_mm/list corruption -> Oops on close). Give up after a few. */
+	if (++job->timeout_count > 3) {
+		dev_err(core->dev, "NPU job stuck after %u timeouts; abandoning\n",
+			job->timeout_count);
+		return DRM_GPU_SCHED_STAT_NOMINAL;
+	}
 
 	return DRM_GPU_SCHED_STAT_RESET;
 }
@@ -447,8 +456,9 @@ static irqreturn_t rocket_job_irq_handler(int irq, void *data)
 	WARN_ON(raw_status & PC_INTERRUPT_RAW_STATUS_DMA_READ_ERROR);
 	WARN_ON(raw_status & PC_INTERRUPT_RAW_STATUS_DMA_WRITE_ERROR);
 
-	if (!(raw_status & PC_INTERRUPT_RAW_STATUS_DPU_0 ||
-	      raw_status & PC_INTERRUPT_RAW_STATUS_DPU_1))
+	/* rkopnu: wake on ANY raw interrupt - librknnrt's matmul completion lands on
+	 * bits 30/31, not the DPU_0/1 bits (8/9) mainline rocket was RE'd against. */
+	if (!raw_status)
 		return IRQ_NONE;
 
 	rocket_pc_writel(core, INTERRUPT_MASK, 0x0);

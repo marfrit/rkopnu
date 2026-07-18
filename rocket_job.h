@@ -41,6 +41,7 @@ struct rocket_job {
 	u32 rk_task_start;
 	u32 rk_task_number;
 	u32 rk_pp_en;
+	u32 timeout_count;
 
 	/* Fence to be signaled by drm-sched once its done with the job */
 	struct dma_fence *inference_done_fence;
