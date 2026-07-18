@@ -6,6 +6,8 @@
 #include <drm/drm_gem.h>
 #include <drm/drm_ioctl.h>
 #include <drm/rocket_accel.h>
+#include "rknpu_ioctl.h"
+#include "rkopnu.h"
 #include <linux/clk.h>
 #include <linux/err.h>
 #include <linux/iommu.h>
@@ -129,32 +131,31 @@ rocket_postclose(struct drm_device *dev, struct drm_file *file)
 	module_put(THIS_MODULE);
 }
 
-static const struct drm_ioctl_desc rocket_drm_driver_ioctls[] = {
-#define ROCKET_IOCTL(n, func) \
-	DRM_IOCTL_DEF_DRV(ROCKET_##n, rocket_ioctl_##func, 0)
-
-	ROCKET_IOCTL(CREATE_BO, create_bo),
-	ROCKET_IOCTL(SUBMIT, submit),
-	ROCKET_IOCTL(PREP_BO, prep_bo),
-	ROCKET_IOCTL(FINI_BO, fini_bo),
+static const struct drm_ioctl_desc rkopnu_ioctls[] = {
+	DRM_IOCTL_DEF_DRV(RKNPU_ACTION,      rkopnu_ioctl_action,      DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(RKNPU_SUBMIT,      rkopnu_ioctl_submit,      DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(RKNPU_MEM_CREATE,  rkopnu_ioctl_mem_create,  DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(RKNPU_MEM_MAP,     rkopnu_ioctl_mem_map,     DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(RKNPU_MEM_DESTROY, rkopnu_ioctl_mem_destroy, DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(RKNPU_MEM_SYNC,    rkopnu_ioctl_mem_sync,    DRM_RENDER_ALLOW),
 };
 
-DEFINE_DRM_ACCEL_FOPS(rocket_accel_driver_fops);
+DEFINE_DRM_GEM_FOPS(rkopnu_driver_fops);
 
 /*
  * Rocket driver version:
  * - 1.0 - initial interface
  */
 static const struct drm_driver rocket_drm_driver = {
-	.driver_features	= DRIVER_COMPUTE_ACCEL | DRIVER_GEM,
+	.driver_features	= DRIVER_RENDER | DRIVER_GEM,
 	.open			= rocket_open,
 	.postclose		= rocket_postclose,
 	.gem_create_object	= rocket_gem_create_object,
-	.ioctls			= rocket_drm_driver_ioctls,
-	.num_ioctls		= ARRAY_SIZE(rocket_drm_driver_ioctls),
-	.fops			= &rocket_accel_driver_fops,
-	.name			= "rocket",
-	.desc			= "rocket DRM",
+	.ioctls			= rkopnu_ioctls,
+	.num_ioctls		= ARRAY_SIZE(rkopnu_ioctls),
+	.fops			= &rkopnu_driver_fops,
+	.name			= "rknpu",
+	.desc			= "rkopnu (rknpu ABI on mainline rocket)",
 };
 
 static int rocket_probe(struct platform_device *pdev)

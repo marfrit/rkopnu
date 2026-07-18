@@ -1,3 +1,5 @@
+./rkopnu.mod.o
+./rkopnu_ioctl.o
 ./rocket_core.o
 ./rocket_device.o
 ./rocket_drv.o

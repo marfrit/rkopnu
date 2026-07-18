@@ -1,8 +1,8 @@
-savedcmd_rocket_drv.o := gcc -Wp,-MMD,./.rocket_drv.o.d -nostdinc -I/home/mfritsche/src/linux-a1-npuclk/arch/arm64/include -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated -I/home/mfritsche/src/linux-a1-npuclk/include -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/include -I/home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi -I/home/mfritsche/src/linux-a1-npuclk/include/uapi -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/include/generated/uapi -include /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler-version.h -include /home/mfritsche/src/linux-a1-npuclk/include/linux/kconfig.h -include /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler_types.h -D__KERNEL__ -mlittle-endian -DKASAN_SHADOW_SCALE_SHIFT= -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mgeneral-regs-only -DCONFIG_CC_HAS_K_CONSTRAINT=1 -Wno-psabi -mabi=lp64 -fno-asynchronous-unwind-tables -fno-unwind-tables -mbranch-protection=pac-ret -Wa,-march=armv8.5-a -DARM64_ASM_ARCH='"armv8.5-a"' -DKASAN_SHADOW_SCALE_SHIFT= -fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls -fzero-init-padding-bits=all -fno-stack-clash-protection -fdiagnostics-show-context=2 -fno-inline-functions-called-once -fmin-function-alignment=4 -fstrict-flex-arrays=3 -fms-extensions -fno-strict-overflow -fno-stack-check -fconserve-stack -fno-builtin-wcslen -Wall -Wextra -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wmissing-declarations -Wmissing-prototypes -Wframe-larger-than=1024 -Wno-main -Wno-type-limits -Wno-dangling-pointer -Wvla-larger-than=1 -Wno-pointer-sign -Wcast-function-type -Wno-unterminated-string-initialization -Wno-array-bounds -Wno-stringop-overflow -Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -Wenum-conversion -Wunused -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-packed-not-aligned -Wno-format-overflow -Wno-format-truncation -Wno-stringop-truncation -Wno-override-init -Wno-missing-field-initializers -Wno-shift-negative-value -Wno-maybe-uninitialized -Wno-sign-compare -Wno-unused-parameter -mstack-protector-guard=sysreg -mstack-protector-guard-reg=sp_el0 -mstack-protector-guard-offset=1536  -DMODULE  -DKBUILD_BASENAME='"rocket_drv"' -DKBUILD_MODNAME='"rkopnu"' -D__KBUILD_MODNAME=rkopnu -c -o rocket_drv.o rocket_drv.c  
+savedcmd_rkopnu_ioctl.o := gcc -Wp,-MMD,./.rkopnu_ioctl.o.d -nostdinc -I/home/mfritsche/src/linux-a1-npuclk/arch/arm64/include -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated -I/home/mfritsche/src/linux-a1-npuclk/include -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/include -I/home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi -I/home/mfritsche/src/linux-a1-npuclk/include/uapi -I/home/mfritsche/src/linux-a1-npuclk/build-npuclk/include/generated/uapi -include /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler-version.h -include /home/mfritsche/src/linux-a1-npuclk/include/linux/kconfig.h -include /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler_types.h -D__KERNEL__ -mlittle-endian -DKASAN_SHADOW_SCALE_SHIFT= -std=gnu11 -fshort-wchar -funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mgeneral-regs-only -DCONFIG_CC_HAS_K_CONSTRAINT=1 -Wno-psabi -mabi=lp64 -fno-asynchronous-unwind-tables -fno-unwind-tables -mbranch-protection=pac-ret -Wa,-march=armv8.5-a -DARM64_ASM_ARCH='"armv8.5-a"' -DKASAN_SHADOW_SCALE_SHIFT= -fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races -fstack-protector-strong -fno-omit-frame-pointer -fno-optimize-sibling-calls -fzero-init-padding-bits=all -fno-stack-clash-protection -fdiagnostics-show-context=2 -fno-inline-functions-called-once -fmin-function-alignment=4 -fstrict-flex-arrays=3 -fms-extensions -fno-strict-overflow -fno-stack-check -fconserve-stack -fno-builtin-wcslen -Wall -Wextra -Wundef -Werror=implicit-function-declaration -Werror=implicit-int -Werror=return-type -Werror=strict-prototypes -Wno-format-security -Wno-trigraphs -Wno-frame-address -Wno-address-of-packed-member -Wmissing-declarations -Wmissing-prototypes -Wframe-larger-than=1024 -Wno-main -Wno-type-limits -Wno-dangling-pointer -Wvla-larger-than=1 -Wno-pointer-sign -Wcast-function-type -Wno-unterminated-string-initialization -Wno-array-bounds -Wno-stringop-overflow -Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 -Werror=date-time -Werror=incompatible-pointer-types -Werror=designated-init -Wenum-conversion -Wunused -Wno-unused-but-set-variable -Wno-unused-const-variable -Wno-packed-not-aligned -Wno-format-overflow -Wno-format-truncation -Wno-stringop-truncation -Wno-override-init -Wno-missing-field-initializers -Wno-shift-negative-value -Wno-maybe-uninitialized -Wno-sign-compare -Wno-unused-parameter -mstack-protector-guard=sysreg -mstack-protector-guard-reg=sp_el0 -mstack-protector-guard-offset=1536  -DMODULE  -DKBUILD_BASENAME='"rkopnu_ioctl"' -DKBUILD_MODNAME='"rkopnu"' -D__KBUILD_MODNAME=rkopnu -c -o rkopnu_ioctl.o rkopnu_ioctl.c  
 
-source_rocket_drv.o := rocket_drv.c
+source_rkopnu_ioctl.o := rkopnu_ioctl.c
 
-deps_rocket_drv.o := \
+deps_rkopnu_ioctl.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler-version.h \
     $(wildcard include/config/CC_VERSION_TEXT) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/kconfig.h \
@@ -42,9 +42,33 @@ deps_rocket_drv.o := \
     $(wildcard include/config/ARM64_PTR_AUTH_KERNEL) \
     $(wildcard include/config/ARM64_PTR_AUTH) \
     $(wildcard include/config/BUILTIN_RETURN_ADDRESS_STRIPS_PAC) \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_accel.h \
-    $(wildcard include/config/DRM_ACCEL) \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_file.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/kernel.h \
+    $(wildcard include/config/PREEMPT_VOLUNTARY_BUILD) \
+    $(wildcard include/config/PREEMPT_DYNAMIC) \
+    $(wildcard include/config/HAVE_PREEMPT_DYNAMIC_CALL) \
+    $(wildcard include/config/HAVE_PREEMPT_DYNAMIC_KEY) \
+    $(wildcard include/config/PREEMPT_) \
+    $(wildcard include/config/DEBUG_ATOMIC_SLEEP) \
+    $(wildcard include/config/SMP) \
+    $(wildcard include/config/MMU) \
+    $(wildcard include/config/PROVE_LOCKING) \
+    $(wildcard include/config/DYNAMIC_FTRACE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/stdarg.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/align.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/align.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/const.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/const.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/array_size.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler.h \
+    $(wildcard include/config/TRACE_BRANCH_PROFILING) \
+    $(wildcard include/config/PROFILE_ALL_BRANCHES) \
+    $(wildcard include/config/OBJTOOL) \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/rwonce.h \
+    $(wildcard include/config/LTO) \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/rwonce.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/kasan-checks.h \
+    $(wildcard include/config/KASAN_GENERIC) \
+    $(wildcard include/config/KASAN_SW_TAGS) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/types.h \
     $(wildcard include/config/HAVE_UID16) \
     $(wildcard include/config/UID16) \
@@ -65,36 +89,34 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/stddef.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/posix_types.h \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/posix_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/completion.h \
-    $(wildcard include/config/LOCKDEP) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/swait.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/list.h \
-    $(wildcard include/config/LIST_HARDENED) \
-    $(wildcard include/config/DEBUG_LIST) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/container_of.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/build_bug.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/compiler.h \
-    $(wildcard include/config/TRACE_BRANCH_PROFILING) \
-    $(wildcard include/config/PROFILE_ALL_BRANCHES) \
-    $(wildcard include/config/OBJTOOL) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/rwonce.h \
-    $(wildcard include/config/LTO) \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/rwonce.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kasan-checks.h \
-    $(wildcard include/config/KASAN_GENERIC) \
-    $(wildcard include/config/KASAN_SW_TAGS) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/kcsan-checks.h \
     $(wildcard include/config/KCSAN_WEAK_MEMORY) \
     $(wildcard include/config/KCSAN_IGNORE_ATOMICS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/poison.h \
-    $(wildcard include/config/ILLEGAL_POINTER_VALUE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/limits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/limits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/limits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/linkage.h \
+    $(wildcard include/config/ARCH_USE_SYM_ANNOTATIONS) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/stringify.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/export.h \
+    $(wildcard include/config/MODVERSIONS) \
+    $(wildcard include/config/GENDWARFKSYMS) \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/linkage.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/container_of.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/build_bug.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/bitops.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/bits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/bits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/bits.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/overflow.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/const.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/const.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/const.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/typecheck.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/kernel.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/sysinfo.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/generic-non-atomic.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/barrier.h \
     $(wildcard include/config/ARM64_PSEUDO_NMI) \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/alternative-macros.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/bits.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/cpucaps.h \
     $(wildcard include/config/ARM64_EPAN) \
     $(wildcard include/config/ARM64_SVE) \
@@ -119,126 +141,7 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/cpucap-defs.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/insn-def.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/brk-imm.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/stringify.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/barrier.h \
-    $(wildcard include/config/SMP) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/spinlock.h \
-    $(wildcard include/config/DEBUG_SPINLOCK) \
-    $(wildcard include/config/PREEMPTION) \
-    $(wildcard include/config/DEBUG_LOCK_ALLOC) \
-    $(wildcard include/config/PREEMPT_RT) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/typecheck.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/preempt.h \
-    $(wildcard include/config/PREEMPT_COUNT) \
-    $(wildcard include/config/DEBUG_PREEMPT) \
-    $(wildcard include/config/TRACE_PREEMPT_TOGGLE) \
-    $(wildcard include/config/PREEMPT_NOTIFIERS) \
-    $(wildcard include/config/PREEMPT_DYNAMIC) \
-    $(wildcard include/config/PREEMPT_NONE) \
-    $(wildcard include/config/PREEMPT_VOLUNTARY) \
-    $(wildcard include/config/PREEMPT) \
-    $(wildcard include/config/PREEMPT_LAZY) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/linkage.h \
-    $(wildcard include/config/ARCH_USE_SYM_ANNOTATIONS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/export.h \
-    $(wildcard include/config/MODVERSIONS) \
-    $(wildcard include/config/GENDWARFKSYMS) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/linkage.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/cleanup.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/err.h \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi/asm/errno.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/errno.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/errno-base.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/args.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/preempt.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/thread_info.h \
-    $(wildcard include/config/THREAD_INFO_IN_TASK) \
-    $(wildcard include/config/GENERIC_ENTRY) \
-    $(wildcard include/config/ARCH_HAS_PREEMPT_LAZY) \
-    $(wildcard include/config/HAVE_ARCH_WITHIN_STACK_FRAMES) \
-    $(wildcard include/config/SH) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/limits.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/limits.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/limits.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/bug.h \
-    $(wildcard include/config/GENERIC_BUG) \
-    $(wildcard include/config/PRINTK) \
-    $(wildcard include/config/BUG_ON_DATA_CORRUPTION) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/bug.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/asm-bug.h \
-    $(wildcard include/config/DEBUG_BUGVERBOSE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bug.h \
-    $(wildcard include/config/DEBUG_BUGVERBOSE_DETAILED) \
-    $(wildcard include/config/BUG) \
-    $(wildcard include/config/GENERIC_BUG_RELATIVE_POINTERS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/instrumentation.h \
-    $(wildcard include/config/NOINSTR_VALIDATION) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/once_lite.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/panic.h \
-    $(wildcard include/config/PANIC_TIMEOUT) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/stdarg.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/printk.h \
-    $(wildcard include/config/MESSAGE_LOGLEVEL_DEFAULT) \
-    $(wildcard include/config/CONSOLE_LOGLEVEL_DEFAULT) \
-    $(wildcard include/config/CONSOLE_LOGLEVEL_QUIET) \
-    $(wildcard include/config/EARLY_PRINTK) \
-    $(wildcard include/config/PRINTK_INDEX) \
-    $(wildcard include/config/DYNAMIC_DEBUG) \
-    $(wildcard include/config/DYNAMIC_DEBUG_CORE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/init.h \
-    $(wildcard include/config/MEMORY_HOTPLUG) \
-    $(wildcard include/config/HAVE_ARCH_PREL32_RELOCATIONS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kern_levels.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/ratelimit_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/bits.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/bits.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/overflow.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/param.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/param.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/param.h \
-    $(wildcard include/config/HZ) \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/param.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/spinlock_types_raw.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/spinlock_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/qspinlock_types.h \
-    $(wildcard include/config/NR_CPUS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/qrwlock_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/byteorder.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/byteorder/little_endian.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/byteorder/little_endian.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/swab.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/swab.h \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi/asm/swab.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/swab.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/byteorder/generic.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/lockdep_types.h \
-    $(wildcard include/config/PROVE_RAW_LOCK_NESTING) \
-    $(wildcard include/config/LOCK_STAT) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dynamic_debug.h \
-    $(wildcard include/config/JUMP_LABEL) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/jump_label.h \
-    $(wildcard include/config/HAVE_ARCH_JUMP_LABEL_RELATIVE) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/jump_label.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/insn.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/restart_block.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/time64.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/math64.h \
-    $(wildcard include/config/ARCH_SUPPORTS_INT128) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/math.h \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/div64.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/div64.h \
-    $(wildcard include/config/CC_OPTIMIZE_FOR_PERFORMANCE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/kernel.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/sysinfo.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/math64.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/time64.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/time.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/time_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/errno.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/errno.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/current.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/bitops.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/generic-non-atomic.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/bitops.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/builtin-__ffs.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/builtin-ffs.h \
@@ -259,6 +162,9 @@ deps_rocket_drv.o := \
     $(wildcard include/config/CC_HAS_K_CONSTRAINT) \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/alternative.h \
     $(wildcard include/config/MODULES) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/init.h \
+    $(wildcard include/config/MEMORY_HOTPLUG) \
+    $(wildcard include/config/HAVE_ARCH_PREL32_RELOCATIONS) \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/atomic_lse.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/atomic/atomic-arch-fallback.h \
     $(wildcard include/config/GENERIC_ATOMIC64) \
@@ -267,6 +173,68 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/instrumented.h \
     $(wildcard include/config/DEBUG_ATOMIC) \
     $(wildcard include/config/DEBUG_ATOMIC_LARGEST_ALIGN) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/bug.h \
+    $(wildcard include/config/GENERIC_BUG) \
+    $(wildcard include/config/PRINTK) \
+    $(wildcard include/config/BUG_ON_DATA_CORRUPTION) \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/bug.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/asm-bug.h \
+    $(wildcard include/config/DEBUG_BUGVERBOSE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bug.h \
+    $(wildcard include/config/DEBUG_BUGVERBOSE_DETAILED) \
+    $(wildcard include/config/BUG) \
+    $(wildcard include/config/GENERIC_BUG_RELATIVE_POINTERS) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/instrumentation.h \
+    $(wildcard include/config/NOINSTR_VALIDATION) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/once_lite.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/panic.h \
+    $(wildcard include/config/PANIC_TIMEOUT) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/printk.h \
+    $(wildcard include/config/MESSAGE_LOGLEVEL_DEFAULT) \
+    $(wildcard include/config/CONSOLE_LOGLEVEL_DEFAULT) \
+    $(wildcard include/config/CONSOLE_LOGLEVEL_QUIET) \
+    $(wildcard include/config/EARLY_PRINTK) \
+    $(wildcard include/config/PRINTK_INDEX) \
+    $(wildcard include/config/DYNAMIC_DEBUG) \
+    $(wildcard include/config/DYNAMIC_DEBUG_CORE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/kern_levels.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/ratelimit_types.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/param.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/param.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/param.h \
+    $(wildcard include/config/HZ) \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/param.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/spinlock_types_raw.h \
+    $(wildcard include/config/DEBUG_SPINLOCK) \
+    $(wildcard include/config/DEBUG_LOCK_ALLOC) \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/spinlock_types.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/qspinlock_types.h \
+    $(wildcard include/config/NR_CPUS) \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/qrwlock_types.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/byteorder.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/byteorder/little_endian.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/byteorder/little_endian.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/swab.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/swab.h \
+  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi/asm/swab.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/swab.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/byteorder/generic.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/lockdep_types.h \
+    $(wildcard include/config/PROVE_RAW_LOCK_NESTING) \
+    $(wildcard include/config/LOCKDEP) \
+    $(wildcard include/config/LOCK_STAT) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/dynamic_debug.h \
+    $(wildcard include/config/JUMP_LABEL) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/jump_label.h \
+    $(wildcard include/config/HAVE_ARCH_JUMP_LABEL_RELATIVE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/cleanup.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/err.h \
+  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi/asm/errno.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/errno.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/asm-generic/errno-base.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/args.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/jump_label.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/insn.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/kmsan-checks.h \
     $(wildcard include/config/KMSAN) \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/instrumented-atomic.h \
@@ -276,6 +244,63 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/non-instrumented-non-atomic.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/le.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/bitops/ext2-atomic-setbit.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/kstrtox.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/log2.h \
+    $(wildcard include/config/ARCH_HAS_ILOG2_U32) \
+    $(wildcard include/config/ARCH_HAS_ILOG2_U64) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/math.h \
+  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/div64.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/div64.h \
+    $(wildcard include/config/CC_OPTIMIZE_FOR_PERFORMANCE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/minmax.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/sprintf.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/static_call_types.h \
+    $(wildcard include/config/HAVE_STATIC_CALL) \
+    $(wildcard include/config/HAVE_STATIC_CALL_INLINE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/trace_printk.h \
+    $(wildcard include/config/TRACING) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/instruction_pointer.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/util_macros.h \
+    $(wildcard include/config/FOO_SUSPEND) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/wordpart.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/errno.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/errno.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_device.h \
+    $(wildcard include/config/TRANSPARENT_HUGEPAGE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/list.h \
+    $(wildcard include/config/LIST_HARDENED) \
+    $(wildcard include/config/DEBUG_LIST) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/poison.h \
+    $(wildcard include/config/ILLEGAL_POINTER_VALUE) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/kref.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/spinlock.h \
+    $(wildcard include/config/PREEMPTION) \
+    $(wildcard include/config/PREEMPT_RT) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/preempt.h \
+    $(wildcard include/config/PREEMPT_COUNT) \
+    $(wildcard include/config/DEBUG_PREEMPT) \
+    $(wildcard include/config/TRACE_PREEMPT_TOGGLE) \
+    $(wildcard include/config/PREEMPT_NOTIFIERS) \
+    $(wildcard include/config/PREEMPT_NONE) \
+    $(wildcard include/config/PREEMPT_VOLUNTARY) \
+    $(wildcard include/config/PREEMPT) \
+    $(wildcard include/config/PREEMPT_LAZY) \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/preempt.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/thread_info.h \
+    $(wildcard include/config/THREAD_INFO_IN_TASK) \
+    $(wildcard include/config/GENERIC_ENTRY) \
+    $(wildcard include/config/ARCH_HAS_PREEMPT_LAZY) \
+    $(wildcard include/config/HAVE_ARCH_WITHIN_STACK_FRAMES) \
+    $(wildcard include/config/SH) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/restart_block.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/time64.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/math64.h \
+    $(wildcard include/config/ARCH_SUPPORTS_INT128) \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/math64.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/vdso/time64.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/time.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/time_types.h \
+  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/current.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/thread_info.h \
     $(wildcard include/config/ARM64_SW_TTBR0_PAN) \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/memory.h \
@@ -317,7 +342,6 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/pfn.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/stack_pointer.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/irqflags.h \
-    $(wildcard include/config/PROVE_LOCKING) \
     $(wildcard include/config/TRACE_IRQFLAGS) \
     $(wildcard include/config/IRQSOFF_TRACER) \
     $(wildcard include/config/PREEMPT_TRACER) \
@@ -337,32 +361,6 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/cputype.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/hwcap.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/hwcap.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/log2.h \
-    $(wildcard include/config/ARCH_HAS_ILOG2_U32) \
-    $(wildcard include/config/ARCH_HAS_ILOG2_U64) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kernel.h \
-    $(wildcard include/config/PREEMPT_VOLUNTARY_BUILD) \
-    $(wildcard include/config/HAVE_PREEMPT_DYNAMIC_CALL) \
-    $(wildcard include/config/HAVE_PREEMPT_DYNAMIC_KEY) \
-    $(wildcard include/config/PREEMPT_) \
-    $(wildcard include/config/DEBUG_ATOMIC_SLEEP) \
-    $(wildcard include/config/MMU) \
-    $(wildcard include/config/DYNAMIC_FTRACE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/align.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/vdso/align.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/array_size.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kstrtox.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/minmax.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/sprintf.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/static_call_types.h \
-    $(wildcard include/config/HAVE_STATIC_CALL) \
-    $(wildcard include/config/HAVE_STATIC_CALL_INLINE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/trace_printk.h \
-    $(wildcard include/config/TRACING) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/instruction_pointer.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/util_macros.h \
-    $(wildcard include/config/FOO_SUSPEND) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/wordpart.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/cpumask.h \
     $(wildcard include/config/FORCE_NR_CPUS) \
     $(wildcard include/config/HOTPLUG_CPU) \
@@ -494,7 +492,14 @@ deps_rocket_drv.o := \
     $(wildcard include/config/INLINE_WRITE_UNLOCK_IRQ) \
     $(wildcard include/config/INLINE_READ_UNLOCK_IRQRESTORE) \
     $(wildcard include/config/INLINE_WRITE_UNLOCK_IRQRESTORE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/wait.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/refcount.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/refcount_types.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/mutex.h \
+    $(wildcard include/config/DEBUG_MUTEXES) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/osq_lock.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/debug_locks.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/mutex_types.h \
+    $(wildcard include/config/MUTEX_SPIN_ON_OWNER) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/idr.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/radix-tree.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/percpu.h \
@@ -593,10 +598,6 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/shmparam.h \
   /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/shmparam.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/kmsan_types.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/mutex_types.h \
-    $(wildcard include/config/MUTEX_SPIN_ON_OWNER) \
-    $(wildcard include/config/DEBUG_MUTEXES) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/osq_lock.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/plist_types.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/hrtimer_types.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/timerqueue_types.h \
@@ -604,7 +605,6 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/timer_types.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/seccomp_types.h \
     $(wildcard include/config/SECCOMP) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/refcount_types.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/resource.h \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/resource.h \
   /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/uapi/asm/resource.h \
@@ -688,7 +688,6 @@ deps_rocket_drv.o := \
     $(wildcard include/config/IOMMU_SUPPORT) \
     $(wildcard include/config/SWAP) \
     $(wildcard include/config/HUGETLB_PAGE) \
-    $(wildcard include/config/TRANSPARENT_HUGEPAGE) \
     $(wildcard include/config/LRU_GEN_STATS) \
     $(wildcard include/config/LRU_GEN_WALKS_MMU) \
     $(wildcard include/config/MEMORY_FAILURE) \
@@ -699,11 +698,10 @@ deps_rocket_drv.o := \
     $(wildcard include/config/SPARSEMEM_VMEMMAP_PREINIT) \
     $(wildcard include/config/HAVE_ARCH_PFN_VALID) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/list_nulls.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/wait.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/seqlock.h \
     $(wildcard include/config/CC_IS_GCC) \
     $(wildcard include/config/GCC_VERSION) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/mutex.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/debug_locks.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/pageblock-flags.h \
     $(wildcard include/config/HUGETLB_PAGE_SIZE_VARIABLE) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/page-flags-layout.h \
@@ -740,8 +738,6 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/auxvec.h \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/auxvec.h \
   /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/uapi/asm/auxvec.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kref.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/refcount.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/rbtree.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/maple_tree.h \
     $(wildcard include/config/MAPLE_RCU_DISABLED) \
@@ -749,6 +745,8 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/rwsem.h \
     $(wildcard include/config/RWSEM_SPIN_ON_OWNER) \
     $(wildcard include/config/DEBUG_RWSEMS) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/completion.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/swait.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/uprobes.h \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/timer.h \
     $(wildcard include/config/DEBUG_OBJECTS_TIMERS) \
@@ -824,6 +822,17 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/sync_core.h \
     $(wildcard include/config/ARCH_HAS_PREPARE_SYNC_CORE_CMD) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/sched/coredump.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_mode_config.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_modeset_lock.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/stackdepot.h \
+    $(wildcard include/config/STACKDEPOT) \
+    $(wildcard include/config/STACKDEPOT_MAX_FRAMES) \
+    $(wildcard include/config/STACKDEPOT_ALWAYS_INIT) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/ww_mutex.h \
+    $(wildcard include/config/DEBUG_RT_MUTEXES) \
+    $(wildcard include/config/DEBUG_WW_MUTEX_SLOWPATH) \
+  /home/mfritsche/src/linux-a1-npuclk/include/linux/rtmutex.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_file.h \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/drm/drm.h \
   /home/mfritsche/src/linux-a1-npuclk/include/uapi/drm/drm_mode.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_prime.h \
@@ -1102,240 +1111,9 @@ deps_rocket_drv.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/logic_pio.h \
     $(wildcard include/config/INDIRECT_PIO) \
   /home/mfritsche/src/linux-a1-npuclk/include/linux/fwnode.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_drv.h \
-    $(wildcard include/config/DEBUG_FS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/irqreturn.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/video/nomodeset.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_device.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_mode_config.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_modeset_lock.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/stackdepot.h \
-    $(wildcard include/config/STACKDEPOT) \
-    $(wildcard include/config/STACKDEPOT_MAX_FRAMES) \
-    $(wildcard include/config/STACKDEPOT_ALWAYS_INIT) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/ww_mutex.h \
-    $(wildcard include/config/DEBUG_RT_MUTEXES) \
-    $(wildcard include/config/DEBUG_WW_MUTEX_SLOWPATH) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/rtmutex.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_gem.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-buf.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/iosys-map.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/io.h \
-    $(wildcard include/config/STRICT_DEVMEM) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/file.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-mapping.h \
-    $(wildcard include/config/DMA_API_DEBUG) \
-    $(wildcard include/config/HAS_DMA) \
-    $(wildcard include/config/IOMMU_DMA) \
-    $(wildcard include/config/DMA_NEED_SYNC) \
-    $(wildcard include/config/NEED_DMA_MAP_STATE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/device.h \
-    $(wildcard include/config/GENERIC_MSI_IRQ) \
-    $(wildcard include/config/ENERGY_MODEL) \
-    $(wildcard include/config/PINCTRL) \
-    $(wildcard include/config/ARCH_HAS_DMA_OPS) \
-    $(wildcard include/config/DMA_DECLARE_COHERENT) \
-    $(wildcard include/config/DMA_CMA) \
-    $(wildcard include/config/SWIOTLB) \
-    $(wildcard include/config/SWIOTLB_DYNAMIC) \
-    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_DEVICE) \
-    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_CPU) \
-    $(wildcard include/config/ARCH_HAS_SYNC_DMA_FOR_CPU_ALL) \
-    $(wildcard include/config/DMA_OPS_BYPASS) \
-    $(wildcard include/config/PM) \
-    $(wildcard include/config/PM_SLEEP) \
-    $(wildcard include/config/OF) \
-    $(wildcard include/config/DEVTMPFS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dev_printk.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/energy_model.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/sched/cpufreq.h \
-    $(wildcard include/config/CPU_FREQ) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/sched/topology.h \
-    $(wildcard include/config/SCHED_CLUSTER) \
-    $(wildcard include/config/SCHED_MC) \
-    $(wildcard include/config/CPU_FREQ_GOV_SCHEDUTIL) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/sched/idle.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/sched/sd_flags.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/klist.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pm.h \
-    $(wildcard include/config/VT_CONSOLE_SLEEP) \
-    $(wildcard include/config/CXL_SUSPEND) \
-    $(wildcard include/config/PM_CLK) \
-    $(wildcard include/config/PM_GENERIC_DOMAINS) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/device/bus.h \
-    $(wildcard include/config/ACPI) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/device/class.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/device/devres.h \
-    $(wildcard include/config/HAS_IOMEM) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/device/driver.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/module.h \
-    $(wildcard include/config/MODULES_TREE_LOOKUP) \
-    $(wildcard include/config/STACKTRACE_BUILD_ID) \
-    $(wildcard include/config/ARCH_USES_CFI_TRAPS) \
-    $(wildcard include/config/MODULE_SIG) \
-    $(wildcard include/config/KALLSYMS) \
-    $(wildcard include/config/BPF_EVENTS) \
-    $(wildcard include/config/DEBUG_INFO_BTF_MODULES) \
-    $(wildcard include/config/EVENT_TRACING) \
-    $(wildcard include/config/KPROBES) \
-    $(wildcard include/config/MODULE_UNLOAD) \
-    $(wildcard include/config/CONSTRUCTORS) \
-    $(wildcard include/config/FUNCTION_ERROR_INJECTION) \
-    $(wildcard include/config/MITIGATION_RETPOLINE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/buildid.h \
-    $(wildcard include/config/VMCORE_INFO) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/kmod.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/umh.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/elf.h \
-    $(wildcard include/config/ARCH_HAVE_EXTRA_ELF_NOTES) \
-    $(wildcard include/config/ARCH_USE_GNU_PROPERTY) \
-    $(wildcard include/config/ARCH_HAVE_ELF_PROT) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/elf.h \
-    $(wildcard include/config/COMPAT_VDSO) \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/user.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/user.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/elf.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/elf-em.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/moduleparam.h \
-    $(wildcard include/config/ALPHA) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/rbtree_latch.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/error-injection.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/error-injection.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/module.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/module.h \
-    $(wildcard include/config/HAVE_MOD_ARCH_SPECIFIC) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/device.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pm_wakeup.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-direction.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-fence.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pci-p2pdma.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pci.h \
-    $(wildcard include/config/PCI_IOV) \
-    $(wildcard include/config/PCIEAER) \
-    $(wildcard include/config/PCIEPORTBUS) \
-    $(wildcard include/config/PCIEASPM) \
-    $(wildcard include/config/HOTPLUG_PCI_PCIE) \
-    $(wildcard include/config/PCIE_PTM) \
-    $(wildcard include/config/PCI_MSI) \
-    $(wildcard include/config/PCIE_DPC) \
-    $(wildcard include/config/PCI_ATS) \
-    $(wildcard include/config/PCI_PRI) \
-    $(wildcard include/config/PCI_PASID) \
-    $(wildcard include/config/PCI_DOE) \
-    $(wildcard include/config/PCI_NPEM) \
-    $(wildcard include/config/PCI_IDE) \
-    $(wildcard include/config/PCI_TSM) \
-    $(wildcard include/config/PCIE_TPH) \
-    $(wildcard include/config/PCI_DOMAINS_GENERIC) \
-    $(wildcard include/config/CARDBUS) \
-    $(wildcard include/config/HOTPLUG_PCI) \
-    $(wildcard include/config/PCI_DOMAINS) \
-    $(wildcard include/config/PCI_QUIRKS) \
-    $(wildcard include/config/PCI_MMCONFIG) \
-    $(wildcard include/config/ACPI_MCFG) \
-    $(wildcard include/config/EEH) \
-    $(wildcard include/config/S390) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/mod_devicetable.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/mei.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/mei_uuid.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/interrupt.h \
-    $(wildcard include/config/IRQ_FORCED_THREADING) \
-    $(wildcard include/config/GENERIC_IRQ_PROBE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/hardirq.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/context_tracking_state.h \
-    $(wildcard include/config/CONTEXT_TRACKING_USER) \
-    $(wildcard include/config/CONTEXT_TRACKING) \
-    $(wildcard include/config/RCU_DYNTICKS_TORTURE) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/ftrace_irq.h \
-    $(wildcard include/config/HWLAT_TRACER) \
-    $(wildcard include/config/OSNOISE_TRACER) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/vtime.h \
-    $(wildcard include/config/VIRT_CPU_ACCOUNTING) \
-    $(wildcard include/config/IRQ_TIME_ACCOUNTING) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/hardirq.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/irq.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/irq.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/kvm_arm.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/esr.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/hardirq.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/irq.h \
-    $(wildcard include/config/GENERIC_IRQ_EFFECTIVE_AFF_MASK) \
-    $(wildcard include/config/GENERIC_IRQ_IPI) \
-    $(wildcard include/config/IRQ_DOMAIN_HIERARCHY) \
-    $(wildcard include/config/DEPRECATED_IRQ_CPU_ONOFFLINE) \
-    $(wildcard include/config/GENERIC_IRQ_MIGRATION) \
-    $(wildcard include/config/GENERIC_PENDING_IRQ) \
-    $(wildcard include/config/HARDIRQS_SW_RESEND) \
-    $(wildcard include/config/GENERIC_IRQ_CHIP) \
-    $(wildcard include/config/GENERIC_IRQ_MULTI_HANDLER) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/irqhandler.h \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/irq_regs.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/irq_regs.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/irqdesc.h \
-    $(wildcard include/config/GENERIC_IRQ_STAT_SNAPSHOT) \
-    $(wildcard include/config/GENERIC_IRQ_DEBUGFS) \
-    $(wildcard include/config/SPARSE_IRQ) \
-    $(wildcard include/config/IRQ_DOMAIN) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/irq_work.h \
-    $(wildcard include/config/IRQ_WORK) \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/irq_work.h \
-  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/arch/arm64/include/generated/asm/hw_irq.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/hw_irq.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/resource_ext.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/msi_api.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/pci.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/pci_regs.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pci_ids.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dmapool.h \
-  /home/mfritsche/src/linux-a1-npuclk/arch/arm64/include/asm/pci.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/asm-generic/pci.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/dma-resv.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_vma_manager.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_mm.h \
-    $(wildcard include/config/DRM_DEBUG_MM) \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_ioctl.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/drm/rocket_accel.h \
   rknpu_ioctl.h \
   rkopnu.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/clk.h \
-    $(wildcard include/config/COMMON_CLK) \
-    $(wildcard include/config/HAVE_CLK_PREPARE) \
-    $(wildcard include/config/HAVE_CLK) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/iommu.h \
-    $(wildcard include/config/IOMMU_API) \
-    $(wildcard include/config/FSL_PAMU) \
-    $(wildcard include/config/IRQ_MSI_IOMMU) \
-    $(wildcard include/config/IOMMU_DEBUGFS) \
-    $(wildcard include/config/IOMMU_SVA) \
-    $(wildcard include/config/IOMMU_IOPF) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/of.h \
-    $(wildcard include/config/OF_DYNAMIC) \
-    $(wildcard include/config/SPARC) \
-    $(wildcard include/config/OF_PROMTREE) \
-    $(wildcard include/config/OF_KOBJ) \
-    $(wildcard include/config/OF_NUMA) \
-    $(wildcard include/config/OF_OVERLAY) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/property.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/iova_bitmap.h \
-    $(wildcard include/config/IOMMUFD_DRIVER) \
-  /home/mfritsche/src/linux-a1-npuclk/include/uapi/linux/iommufd.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/platform_device.h \
-    $(wildcard include/config/SUSPEND) \
-    $(wildcard include/config/HIBERNATE_CALLBACKS) \
-    $(wildcard include/config/SUPERH) \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/pm_runtime.h \
-  rocket_device.h \
-  rocket_core.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/gpu_scheduler.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/spsc_queue.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/linux/reset.h \
-    $(wildcard include/config/RESET_CONTROLLER) \
-  rocket_registers.h \
-  rocket_drv.h \
-  rocket_gem.h \
-  /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_gem_shmem_helper.h \
-  rocket_job.h \
 
-rocket_drv.o: $(deps_rocket_drv.o)
+rkopnu_ioctl.o: $(deps_rkopnu_ioctl.o)
 
-$(deps_rocket_drv.o):
+$(deps_rkopnu_ioctl.o):
