@@ -16,6 +16,9 @@
 #include "rocket_drv.h"
 #include "rocket_job.h"
 #include "rocket_registers.h"
+#include <linux/iosys-map.h>
+#include <drm/drm_gem_shmem_helper.h>
+#include "rknpu_ioctl.h"
 
 #define JOB_TIMEOUT_MS 500
 
@@ -644,5 +647,84 @@ int rocket_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 exit:
 	kvfree(jobs);
 
+	return ret;
+}
+
+/*
+ * rkopnu Phase 3: the rknpu RKNPU_SUBMIT ioctl. Reads the rknpu_task[] out of
+ * the task BO (obj_addr handed back by MEM_CREATE), translates each into a
+ * rocket_task (regcmd_addr->regcmd, regcfg_amount->regcmd_count -- same RK3588
+ * PC register-command format rocket_job_hw_submit already drives), pushes onto
+ * rocket's drm_sched, and blocks until the NPU IRQ completes it (the rknpu ABI
+ * is synchronous). Single-core first cut; core_mask multi-core is Phase 3b.
+ */
+int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *file)
+{
+	struct rocket_device *rdev = to_rocket_device(dev);
+	struct rocket_file_priv *file_priv = file->driver_priv;
+	struct rknpu_submit *args = data;
+	struct drm_gem_object *task_gem;
+	struct rknpu_task *tasks;
+	struct rocket_job *rjob;
+	struct iosys_map map;
+	int ret, i;
+
+	if (args->task_number == 0)
+		return 0;
+
+	task_gem = (struct drm_gem_object *)(uintptr_t)args->task_obj_addr;
+	if (!task_gem)
+		return -EINVAL;
+
+	ret = drm_gem_vmap(task_gem, &map);
+	if (ret)
+		return ret;
+	tasks = (struct rknpu_task *)map.vaddr + args->task_start;
+
+	rjob = kzalloc_obj(*rjob);
+	if (!rjob) {
+		ret = -ENOMEM;
+		goto out_vunmap;
+	}
+	kref_init(&rjob->refcount);
+	rjob->rdev = rdev;
+
+	ret = drm_sched_job_init(&rjob->base, &file_priv->sched_entity, 1, NULL,
+				 file->client_id);
+	if (ret)
+		goto out_put_job;
+
+	rjob->task_count = args->task_number;
+	rjob->tasks = kvmalloc_objs(*rjob->tasks, rjob->task_count);
+	if (!rjob->tasks) {
+		ret = -ENOMEM;
+		goto out_cleanup;
+	}
+	for (i = 0; i < rjob->task_count; i++) {
+		rjob->tasks[i].regcmd = tasks[i].regcmd_addr;
+		rjob->tasks[i].regcmd_count = tasks[i].regcfg_amount;
+	}
+
+	rjob->in_bo_count = 0;
+	rjob->out_bo_count = 0;
+	rjob->domain = rocket_iommu_domain_get(file_priv);
+
+	ret = rocket_job_push(rjob);
+	if (ret)
+		goto out_cleanup;
+
+	if (rjob->inference_done_fence)
+		dma_fence_wait(rjob->inference_done_fence, false);
+
+	args->task_counter = args->task_number;
+	ret = 0;
+
+out_cleanup:
+	if (ret)
+		drm_sched_job_cleanup(&rjob->base);
+out_put_job:
+	rocket_job_put(rjob);
+out_vunmap:
+	drm_gem_vunmap(task_gem, &map);
 	return ret;
 }

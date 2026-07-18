@@ -176,8 +176,4 @@ int rkopnu_ioctl_mem_sync(struct drm_device *dev, void *data, struct drm_file *f
 	return 0;
 }
 
-/* SUBMIT: Phase 3. */
-int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *file)
-{
-	return -ENOSYS;
-}
+/* SUBMIT: implemented in rocket_job.c (needs the static job/sched machinery). */
