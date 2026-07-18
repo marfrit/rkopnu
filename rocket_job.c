@@ -17,6 +17,7 @@
 #include "rocket_job.h"
 #include "rocket_registers.h"
 #include <linux/iosys-map.h>
+#include <linux/bitops.h>
 #include <drm/drm_gem_shmem_helper.h>
 #include "rknpu_ioctl.h"
 
@@ -110,46 +111,53 @@ fail:
 static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *job)
 {
 	unsigned int extra_bit;
+	int ci = core->index;
+	int ts, tn;
+	struct rknpu_task *first, *last;
 
 	if (atomic_read(&core->reset.pending))
 		return;
 
 	job->next_task_idx++;
 
-	/*
-	 * rkopnu: enable the PP pipeline (rocket's CNA/CORE S_POINTER writes are
-	 * the vendor rknpu enable writes; extra_bit = 0x10000000*core selects the
-	 * core), then program the PC block exactly like rknpu_job_subcore_commit_pc
-	 * for RK3588 (scale=2, extra=4, task_number_bits=12). One program runs the
-	 * whole [task_start, task_end] range.
-	 */
-	rocket_pc_writel(core, BASE_ADDRESS, 0x1);
+	/* RK3588 (num_irqs>1): per-core task range comes from subcore_task[] */
+	if (job->rk_use_core_num == 3) {
+		ts = job->rk_subcore[ci + 2].task_start;
+		tn = job->rk_subcore[ci + 2].task_number;
+	} else {
+		ts = job->rk_subcore[ci].task_start;
+		tn = job->rk_subcore[ci].task_number;
+	}
+	if (tn == 0) { /* fallback: single-range submit */
+		ts = job->rk_task_start;
+		tn = job->rk_task_number;
+	}
+	first = &job->rk_tasks[ts];
+	last = &job->rk_tasks[ts + tn - 1];
 
+	/* enable the PP pipeline (vendor rknpu enable writes = rocket CNA/CORE S_POINTER) */
+	rocket_pc_writel(core, BASE_ADDRESS, 0x1);
 	extra_bit = 0x10000000 * core->index;
 	rocket_cna_writel(core, S_POINTER, CNA_S_POINTER_POINTER_PP_EN(1) |
 					   CNA_S_POINTER_EXECUTER_PP_EN(1) |
-					   CNA_S_POINTER_POINTER_PP_MODE(1) |
-					   extra_bit);
+					   CNA_S_POINTER_POINTER_PP_MODE(1) | extra_bit);
 	rocket_core_writel(core, S_POINTER, CORE_S_POINTER_POINTER_PP_EN(1) |
 					    CORE_S_POINTER_EXECUTER_PP_EN(1) |
-					    CORE_S_POINTER_POINTER_PP_MODE(1) |
-					    extra_bit);
+					    CORE_S_POINTER_POINTER_PP_MODE(1) | extra_bit);
 
-	rocket_pc_writel(core, BASE_ADDRESS, (u32)job->rk_regcmd_addr);
+	/* PC program (vendor rknpu_job_subcore_commit_pc, rk3588: scale=2, extra=4, bits=12) */
+	rocket_pc_writel(core, BASE_ADDRESS, (u32)first->regcmd_addr);
 	rocket_pc_writel(core, REGISTER_AMOUNTS,
-			 (job->rk_regcfg_amount + 4 + 2 - 1) / 2 - 1);
-	rocket_pc_writel(core, INTERRUPT_MASK, 0xc0000000); /* NPU raises done on bits 30/31 */
-	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
-	rocket_pc_writel(core, TASK_CON,
-			 ((0x6 | job->rk_pp_en) << 12) | job->rk_task_number);
+			 (first->regcfg_amount + 4 + 2 - 1) / 2 - 1);
+	rocket_pc_writel(core, INTERRUPT_MASK, last->int_mask);
+	rocket_pc_writel(core, INTERRUPT_CLEAR, first->int_mask);
+	rocket_pc_writel(core, TASK_CON, ((0x6 | job->rk_pp_en) << 12) | tn);
 	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, (u32)job->rk_task_base_addr);
-
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 
-	dev_err(core->dev, "rkopnu HWSUB regcmd=0x%llx amount=%u imask=0x%x inum=%u base=0x%llx core=%d",
-		job->rk_regcmd_addr, job->rk_regcfg_amount, job->rk_int_mask,
-		job->rk_task_number, job->rk_task_base_addr, core->index);
+	dev_err(core->dev, "rkopnu HWSUB core%d ts=%d tn=%d regcmd=0x%llx amount=%u imask=0x%x",
+		ci, ts, tn, first->regcmd_addr, first->regcfg_amount, last->int_mask);
 }
 
 static int rocket_acquire_object_fences(struct drm_gem_object **bos,
@@ -344,7 +352,7 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 	 * delay, not this core's own completion time.
 	 */
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
-	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
+	rocket_pc_writel(core, INTERRUPT_CLEAR, 0x1ffff);
 
 	scoped_guard(mutex, &core->job_lock)
 		if (core->in_flight_job) {
@@ -679,7 +687,7 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	ret = drm_gem_vmap(task_gem, &map);
 	if (ret)
 		return ret;
-	tasks = (struct rknpu_task *)map.vaddr + args->task_start;
+	tasks = (struct rknpu_task *)map.vaddr;
 
 	rjob = kzalloc_obj(*rjob);
 	if (!rjob) {
@@ -694,20 +702,16 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (ret)
 		goto out_put_job;
 
-	{
-		struct rknpu_task *first_task = &tasks[0];
-		struct rknpu_task *last_task = &tasks[args->task_number - 1];
-
-		rjob->task_count = 1; /* one PC program drives the whole range */
-		rjob->tasks = NULL;
-		rjob->rk_regcmd_addr    = first_task->regcmd_addr;
-		rjob->rk_regcfg_amount  = first_task->regcfg_amount;
-		rjob->rk_int_mask       = last_task->int_mask;
-		rjob->rk_int_clear      = first_task->int_mask;
-		rjob->rk_task_number    = args->task_number;
-		rjob->rk_task_base_addr = args->task_base_addr;
-		rjob->rk_pp_en = (args->flags & RKNPU_JOB_PINGPONG) ? 1 : 0;
-	}
+	rjob->task_count = 1; /* one PC program per core drives its subcore range */
+	rjob->tasks = NULL;
+	rjob->rk_tasks = tasks;
+	memcpy(rjob->rk_subcore, args->subcore_task, sizeof(rjob->rk_subcore));
+	rjob->rk_core_mask = args->core_mask;
+	rjob->rk_use_core_num = hweight32(args->core_mask & 0x7);
+	rjob->rk_task_base_addr = args->task_base_addr;
+	rjob->rk_task_start = args->task_start;
+	rjob->rk_task_number = args->task_number;
+	rjob->rk_pp_en = (args->flags & RKNPU_JOB_PINGPONG) ? 1 : 0;
 
 	rjob->in_bo_count = 0;
 	rjob->out_bo_count = 0;

@@ -1246,6 +1246,9 @@ deps_rocket_core.o := \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_mm.h \
     $(wildcard include/config/DRM_DEBUG_MM) \
   rocket_device.h \
+  rknpu_ioctl.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/drm/drm.h \
+  /home/mfritsche/src/linux-a1-npuclk/include/uapi/drm/drm_mode.h \
 
 rocket_core.o: $(deps_rocket_core.o)
 

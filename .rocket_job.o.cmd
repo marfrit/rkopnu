@@ -1329,9 +1329,9 @@ deps_rocket_job.o := \
   rocket_job.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_drv.h \
   /home/mfritsche/src/linux-a1-npuclk/include/video/nomodeset.h \
+  rknpu_ioctl.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_gem_shmem_helper.h \
   /home/mfritsche/src/linux-a1-npuclk/include/drm/drm_ioctl.h \
-  rknpu_ioctl.h \
 
 rocket_job.o: $(deps_rocket_job.o)
 

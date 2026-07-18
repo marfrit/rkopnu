@@ -15,6 +15,8 @@ struct rocket_task {
 	u32 regcmd_count;
 };
 
+#include "rknpu_ioctl.h"
+
 struct rocket_job {
 	struct drm_sched_job base;
 
@@ -30,13 +32,14 @@ struct rocket_job {
 	u32 task_count;
 	u32 next_task_idx;
 
-	/* rkopnu: rknpu PC-program params (one hw_submit drives the whole task range) */
-	u64 rk_regcmd_addr;
-	u32 rk_regcfg_amount;
-	u32 rk_int_mask;
-	u32 rk_int_clear;
-	u32 rk_task_number;
+	/* rkopnu: rknpu submit context; per-core task range selected in hw_submit */
+	struct rknpu_task *rk_tasks;              /* vmap'd task array base */
+	struct rknpu_subcore_task rk_subcore[5];
+	u32 rk_core_mask;
+	u32 rk_use_core_num;
 	u64 rk_task_base_addr;
+	u32 rk_task_start;
+	u32 rk_task_number;
 	u32 rk_pp_en;
 
 	/* Fence to be signaled by drm-sched once its done with the job */
