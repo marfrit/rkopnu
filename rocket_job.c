@@ -329,9 +329,17 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 	if (ret < 0)
 		return fence;
 
-	ret = iommu_attach_group(job->domain->domain, core->iommu_group);
-	if (ret < 0)
-		return fence;
+	/* rkopnu perf: keep the IOMMU domain attached across jobs (the vendor does);
+	 * a per-submit attach/detach is a TLB flush * 2028 submits. Re-attach only on
+	 * a domain change (never happens for a single librknnrt client). */
+	if (core->attached_domain != job->domain) {
+		if (core->attached_domain)
+			iommu_detach_group(NULL, core->iommu_group);
+		ret = iommu_attach_group(job->domain->domain, core->iommu_group);
+		if (ret < 0)
+			return fence;
+		core->attached_domain = job->domain;
+	}
 
 	scoped_guard(mutex, &core->job_lock) {
 		core->in_flight_job = job;
@@ -361,7 +369,7 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 				return;
 			}
 
-			iommu_detach_group(NULL, iommu_group_get(core->dev));
+			/* rkopnu perf: leave the domain attached (see rocket_job_run) */
 			dma_fence_signal(core->in_flight_job->done_fence);
 			rocket_device_pm_put(core->rdev);
 			core->in_flight_job = NULL;
@@ -386,6 +394,7 @@ rocket_reset(struct rocket_core *core, struct drm_sched_job *bad)
 			rocket_device_pm_put_noidle(core->rdev);
 
 		iommu_detach_group(NULL, core->iommu_group);
+		core->attached_domain = NULL;
 
 		core->in_flight_job = NULL;
 	}
