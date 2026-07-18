@@ -109,49 +109,38 @@ fail:
 
 static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *job)
 {
-	struct rocket_task *task;
-	unsigned int extra_bit;
-
 	/* Don't queue the job if a reset is in progress */
 	if (atomic_read(&core->reset.pending))
 		return;
 
-	/* GO ! */
-
-	task = &job->tasks[job->next_task_idx];
 	job->next_task_idx++;
 
-	rocket_pc_writel(core, BASE_ADDRESS, 0x1);
+	/*
+	 * rkopnu: program the PC block exactly like the vendor
+	 * rknpu_job_subcore_commit_pc() for RK3588 (pc_data_amount_scale=2,
+	 * RKNPU_PC_DATA_EXTRA_AMOUNT=4, pc_task_number_bits=12, pc_dma_ctrl=0).
+	 * One program runs the whole [task_start, task_end] range.
+	 */
 
-	 /* From rknpu, in the TRM this bit is marked as reserved */
-	extra_bit = 0x10000000 * core->index;
-	rocket_cna_writel(core, S_POINTER, CNA_S_POINTER_POINTER_PP_EN(1) |
-					   CNA_S_POINTER_EXECUTER_PP_EN(1) |
-					   CNA_S_POINTER_POINTER_PP_MODE(1) |
-					   extra_bit);
+	/* per-core enable (num_irqs>1 path) */
+	writel(0xe + 0x10000000u * core->index, core->pc_iomem + 0x1004);
+	writel(0xe + 0x10000000u * core->index, core->pc_iomem + 0x3004);
 
-	rocket_core_writel(core, S_POINTER, CORE_S_POINTER_POINTER_PP_EN(1) |
-					    CORE_S_POINTER_EXECUTER_PP_EN(1) |
-					    CORE_S_POINTER_POINTER_PP_MODE(1) |
-					    extra_bit);
-
-	rocket_pc_writel(core, BASE_ADDRESS, task->regcmd);
+	rocket_pc_writel(core, BASE_ADDRESS, (u32)job->rk_regcmd_addr);
 	rocket_pc_writel(core, REGISTER_AMOUNTS,
-			 PC_REGISTER_AMOUNTS_PC_DATA_AMOUNT((task->regcmd_count + 1) / 2 - 1));
+			 (job->rk_regcfg_amount + 4 + 2 - 1) / 2 - 1);
+	rocket_pc_writel(core, INTERRUPT_MASK, job->rk_int_mask);
+	rocket_pc_writel(core, INTERRUPT_CLEAR, job->rk_int_clear);
+	rocket_pc_writel(core, TASK_CON,
+			 ((0x6 | job->rk_pp_en) << 12) | job->rk_task_number);
+	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, (u32)job->rk_task_base_addr);
 
-	rocket_pc_writel(core, INTERRUPT_MASK, PC_INTERRUPT_MASK_DPU_0 | PC_INTERRUPT_MASK_DPU_1);
-	rocket_pc_writel(core, INTERRUPT_CLEAR, PC_INTERRUPT_CLEAR_DPU_0 | PC_INTERRUPT_CLEAR_DPU_1);
+	/* start pulse: OP_EN 1 -> 0 */
+	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
+	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 
-	rocket_pc_writel(core, TASK_CON, PC_TASK_CON_RESERVED_0(1) |
-					 PC_TASK_CON_TASK_COUNT_CLEAR(1) |
-					 PC_TASK_CON_TASK_NUMBER(1) |
-					 PC_TASK_CON_TASK_PP_EN(1));
-
-	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, PC_TASK_DMA_BASE_ADDR_DMA_BASE_ADDR(0x0));
-
-	rocket_pc_writel(core, OPERATION_ENABLE, PC_OPERATION_ENABLE_OP_EN(1));
-
-	dev_dbg(core->dev, "Submitted regcmd at 0x%llx to core %d", task->regcmd, core->index);
+	dev_dbg(core->dev, "rkopnu: submitted regcmd 0x%llx (%u tasks) to core %d",
+		job->rk_regcmd_addr, job->rk_task_number, core->index);
 }
 
 static int rocket_acquire_object_fences(struct drm_gem_object **bos,
@@ -667,7 +656,7 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	struct rknpu_task *tasks;
 	struct rocket_job *rjob;
 	struct iosys_map map;
-	int ret, i;
+	int ret;
 
 	if (args->task_number == 0)
 		return 0;
@@ -694,15 +683,19 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (ret)
 		goto out_put_job;
 
-	rjob->task_count = args->task_number;
-	rjob->tasks = kvmalloc_objs(*rjob->tasks, rjob->task_count);
-	if (!rjob->tasks) {
-		ret = -ENOMEM;
-		goto out_cleanup;
-	}
-	for (i = 0; i < rjob->task_count; i++) {
-		rjob->tasks[i].regcmd = tasks[i].regcmd_addr;
-		rjob->tasks[i].regcmd_count = tasks[i].regcfg_amount;
+	{
+		struct rknpu_task *first_task = &tasks[0];
+		struct rknpu_task *last_task = &tasks[args->task_number - 1];
+
+		rjob->task_count = 1; /* one PC program drives the whole range */
+		rjob->tasks = NULL;
+		rjob->rk_regcmd_addr    = first_task->regcmd_addr;
+		rjob->rk_regcfg_amount  = first_task->regcfg_amount;
+		rjob->rk_int_mask       = last_task->int_mask;
+		rjob->rk_int_clear      = first_task->int_mask;
+		rjob->rk_task_number    = args->task_number;
+		rjob->rk_task_base_addr = args->task_base_addr;
+		rjob->rk_pp_en = (args->flags & RKNPU_JOB_PINGPONG) ? 1 : 0;
 	}
 
 	rjob->in_bo_count = 0;

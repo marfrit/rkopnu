@@ -30,6 +30,15 @@ struct rocket_job {
 	u32 task_count;
 	u32 next_task_idx;
 
+	/* rkopnu: rknpu PC-program params (one hw_submit drives the whole task range) */
+	u64 rk_regcmd_addr;
+	u32 rk_regcfg_amount;
+	u32 rk_int_mask;
+	u32 rk_int_clear;
+	u32 rk_task_number;
+	u64 rk_task_base_addr;
+	u32 rk_pp_en;
+
 	/* Fence to be signaled by drm-sched once its done with the job */
 	struct dma_fence *inference_done_fence;
 
