@@ -147,8 +147,9 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 
-	dev_dbg(core->dev, "rkopnu: regcmd 0x%llx (%u tasks) core %d",
-		job->rk_regcmd_addr, job->rk_task_number, core->index);
+	dev_err(core->dev, "rkopnu HWSUB regcmd=0x%llx amount=%u imask=0x%x inum=%u base=0x%llx core=%d",
+		job->rk_regcmd_addr, job->rk_regcfg_amount, job->rk_int_mask,
+		job->rk_task_number, job->rk_task_base_addr, core->index);
 }
 
 static int rocket_acquire_object_fences(struct drm_gem_object **bos,
@@ -397,7 +398,9 @@ static enum drm_gpu_sched_stat rocket_job_timedout(struct drm_sched_job *sched_j
 	struct rocket_device *rdev = job->rdev;
 	struct rocket_core *core = sched_to_core(rdev, sched_job->sched);
 
-	dev_err(core->dev, "NPU job timed out");
+	dev_err(core->dev, "NPU job timed out; int_raw=0x%x int_status=0x%x",
+		rocket_pc_readl(core, INTERRUPT_RAW_STATUS),
+		rocket_pc_readl(core, INTERRUPT_STATUS));
 
 	atomic_set(&core->reset.pending, 1);
 	rocket_reset(core, sched_job);
