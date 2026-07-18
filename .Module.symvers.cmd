@@ -1,0 +1,1 @@
+savedcmd_Module.symvers :=  /home/mfritsche/src/linux-a1-npuclk/build-npuclk/scripts/mod/modpost -M          -o Module.symvers -n -T modules.order -i /home/mfritsche/src/linux-a1-npuclk/build-npuclk/Module.symvers -e 

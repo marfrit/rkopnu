@@ -1,0 +1,1 @@
+savedcmd_rkopnu.ko := ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T /home/mfritsche/src/linux-a1-npuclk/build-npuclk/scripts/module.lds -o rkopnu.ko rkopnu.o rkopnu.mod.o .module-common.o

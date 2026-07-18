@@ -1,0 +1,5 @@
+./rocket_core.o
+./rocket_device.o
+./rocket_drv.o
+./rocket_gem.o
+./rocket_job.o
