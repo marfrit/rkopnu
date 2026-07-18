@@ -419,7 +419,7 @@ static enum drm_gpu_sched_stat rocket_job_timedout(struct drm_sched_job *sched_j
 	if (++job->timeout_count > 3) {
 		dev_err(core->dev, "NPU job stuck after %u timeouts; abandoning\n",
 			job->timeout_count);
-		return DRM_GPU_SCHED_STAT_NOMINAL;
+		return DRM_GPU_SCHED_STAT_ENODEV;
 	}
 
 	return DRM_GPU_SCHED_STAT_RESET;
