@@ -6,6 +6,7 @@
 
 #include <drm/drm_mm.h>
 #include <drm/gpu_scheduler.h>
+#include <linux/iosys-map.h>
 
 #include "rocket_device.h"
 
@@ -24,6 +25,13 @@ struct rocket_file_priv {
 	struct mutex mm_lock;
 
 	struct drm_sched_entity sched_entity;
+
+	/* rkopnu perf: cache the kernel vmap of the librknnrt task BO. It reuses
+	 * one task BO across the whole session; re-vmapping it every SUBMIT
+	 * rebuilds its kernel PTEs ~2330x/prefill. Keyed on the gem pointer;
+	 * holds a gem reference so the mapping can't be freed under us. */
+	struct drm_gem_object *task_vmap_gem;
+	struct iosys_map task_vmap;
 };
 
 struct rocket_iommu_domain *rocket_iommu_domain_get(struct rocket_file_priv *rocket_priv);

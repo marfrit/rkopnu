@@ -693,7 +693,6 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	struct drm_gem_object *task_gem;
 	struct rknpu_task *tasks;
 	struct rocket_job *rjob;
-	struct iosys_map map;
 	int ret;
 
 	if (args->task_number == 0)
@@ -703,16 +702,26 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (!task_gem)
 		return -EINVAL;
 
-	ret = drm_gem_vmap(task_gem, &map);
-	if (ret)
-		return ret;
-	tasks = (struct rknpu_task *)map.vaddr;
+	/* rkopnu perf: reuse the cached kernel vmap if this is the same task BO
+	 * as last SUBMIT (librknnrt keeps one for the session). Only (re)vmap on
+	 * a BO change -- avoids ~2330 PTE rebuilds per prefill. */
+	if (file_priv->task_vmap_gem != task_gem) {
+		if (file_priv->task_vmap_gem) {
+			drm_gem_vunmap(file_priv->task_vmap_gem, &file_priv->task_vmap);
+			drm_gem_object_put(file_priv->task_vmap_gem);
+			file_priv->task_vmap_gem = NULL;
+		}
+		ret = drm_gem_vmap(task_gem, &file_priv->task_vmap);
+		if (ret)
+			return ret;
+		drm_gem_object_get(task_gem);
+		file_priv->task_vmap_gem = task_gem;
+	}
+	tasks = (struct rknpu_task *)file_priv->task_vmap.vaddr;
 
 	rjob = kzalloc_obj(*rjob);
-	if (!rjob) {
-		ret = -ENOMEM;
-		goto out_vunmap;
-	}
+	if (!rjob)
+		return -ENOMEM;
 	kref_init(&rjob->refcount);
 	rjob->rdev = rdev;
 
@@ -751,7 +760,5 @@ out_cleanup:
 		drm_sched_job_cleanup(&rjob->base);
 out_put_job:
 	rocket_job_put(rjob);
-out_vunmap:
-	drm_gem_vunmap(task_gem, &map);
 	return ret;
 }

@@ -124,6 +124,13 @@ rocket_postclose(struct drm_device *dev, struct drm_file *file)
 	struct rocket_file_priv *rocket_priv = file->driver_priv;
 
 	rocket_job_close(rocket_priv);
+
+	/* rkopnu perf: drop the cached task-BO vmap (see rkopnu_ioctl_submit). */
+	if (rocket_priv->task_vmap_gem) {
+		drm_gem_vunmap(rocket_priv->task_vmap_gem, &rocket_priv->task_vmap);
+		drm_gem_object_put(rocket_priv->task_vmap_gem);
+	}
+
 	mutex_destroy(&rocket_priv->mm_lock);
 	drm_mm_takedown(&rocket_priv->mm);
 	rocket_iommu_domain_put(rocket_priv->domain);
