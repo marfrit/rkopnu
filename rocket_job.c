@@ -334,6 +334,7 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 	struct rocket_device *rdev = job->rdev;
 	struct rocket_core *core = sched_to_core(rdev, sched_job->sched);
 	struct dma_fence *fence = NULL;
+	int attach_err = 0;
 	int ret;
 
 	if (unlikely(job->base.s_fence->finished.error))
@@ -365,23 +366,41 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 	if (ret < 0)
 		return fence;
 
-	/* rkopnu perf: keep the IOMMU domain attached across jobs (the vendor does);
-	 * a per-submit attach/detach is a TLB flush * 2028 submits. Re-attach only on
-	 * a domain change (never happens for a single librknnrt client). */
-	if (core->attached_domain != job->domain) {
-		if (core->attached_domain)
-			iommu_detach_group(NULL, core->iommu_group);
-		ret = iommu_attach_group(job->domain->domain, core->iommu_group);
-		if (ret < 0)
-			return fence;
-		core->attached_domain = job->domain;
-	}
+	/*
+	 * rkopnu perf: keep the IOMMU domain attached across jobs (the vendor
+	 * does); a per-submit attach/detach is a TLB flush * 2028 submits.
+	 * Re-attach only on a domain change. The attach/detach of attached_domain
+	 * is done under job_lock so it is serialized against the detach in
+	 * rocket_job_close() and rocket_reset() (Fable review).
+	 */
 
 	scoped_guard(mutex, &core->job_lock) {
-		core->in_flight_job = job;
-		core->t_run = ktime_get_ns();
-		atomic64_add(core->t_run - job->t_push, &dbg_worker_ns);
-		rocket_job_hw_submit(core, job);
+		if (core->attached_domain != job->domain) {
+			if (core->attached_domain)
+				iommu_detach_group(NULL, core->iommu_group);
+			attach_err = iommu_attach_group(job->domain->domain,
+							core->iommu_group);
+			core->attached_domain = attach_err ? NULL : job->domain;
+		}
+		if (!attach_err) {
+			core->in_flight_job = job;
+			core->t_run = ktime_get_ns();
+			atomic64_add(core->t_run - job->t_push, &dbg_worker_ns);
+			rocket_job_hw_submit(core, job);
+		}
+	}
+
+	/*
+	 * On attach failure the job never reached hw_submit, so no IRQ will ever
+	 * complete it. Unwind the PM ref taken above and fail the fence now
+	 * instead of leaving a phantom "submitted" job to time out (which would
+	 * also leak the PM ref, since rocket_reset only unwinds when in_flight_job
+	 * is set). See Fable review.
+	 */
+	if (attach_err) {
+		rocket_device_pm_put(rdev);
+		dma_fence_set_error(fence, attach_err);
+		dma_fence_signal(fence);
 	}
 
 	return fence;
@@ -445,8 +464,10 @@ rocket_reset(struct rocket_core *core, struct drm_sched_job *bad)
 		if (core->in_flight_job)
 			rocket_device_pm_put_noidle(core->rdev);
 
-		iommu_detach_group(NULL, core->iommu_group);
-		core->attached_domain = NULL;
+		if (core->attached_domain) {
+			iommu_detach_group(NULL, core->iommu_group);
+			core->attached_domain = NULL;
+		}
 
 		core->in_flight_job = NULL;
 	}
@@ -795,14 +816,24 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (!task_gem)
 		return -EINVAL;
 
+	/*
+	 * task_obj_addr is a raw kernel pointer handed back by MEM_CREATE; take a
+	 * reference so a concurrent MEM_DESTROY / fd close can't free the BO under
+	 * the vmap and the in-flight rk_tasks deref (Fable review). vmap only pins
+	 * pages, not the gem object.
+	 */
+	drm_gem_object_get(task_gem);
+
 	/* Map the task BO for this submit only. librknnrt drives the 3 cores from
 	 * concurrent threads, each with its own task BO, so a shared per-file vmap
 	 * cache races (one thread's vunmap strands another's in-flight rk_tasks).
 	 * The ioctl blocks on the fence below until the job completes, so this
 	 * per-submit mapping stays valid across the worker's hw_submit. */
 	ret = drm_gem_vmap(task_gem, &map);
-	if (ret)
+	if (ret) {
+		drm_gem_object_put(task_gem);
 		return ret;
+	}
 	tasks = (struct rknpu_task *)map.vaddr;
 
 	rjob = kzalloc_obj(*rjob);
@@ -845,8 +876,20 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (ret)
 		goto out_cleanup;
 
-	if (rjob->inference_done_fence)
-		dma_fence_wait(rjob->inference_done_fence, false);
+	/*
+	 * Bounded wait: the rknpu ABI is synchronous, but an unbounded
+	 * non-interruptible wait leaves an unkillable D-state task if the NPU
+	 * wedges and even reset fails to signal the fence -> SIGKILL from a
+	 * crashing client can't unstick it and reboot hangs. drm_sched already
+	 * resets a stuck job within ~2s (500ms * up to 4); cap the wait past that
+	 * so a genuine wedge fails the request instead of the box. (Fable review.)
+	 */
+	if (rjob->inference_done_fence) {
+		long tout = dma_fence_wait_timeout(rjob->inference_done_fence,
+						   false, msecs_to_jiffies(5000));
+		if (tout <= 0)
+			drm_warn(dev, "rkopnu: submit wait unfinished (%ld)\n", tout);
+	}
 
 	args->task_counter = args->task_number;
 	ret = 0;
@@ -858,5 +901,6 @@ out_put_job:
 	rocket_job_put(rjob);
 out_vunmap:
 	drm_gem_vunmap(task_gem, &map);
+	drm_gem_object_put(task_gem);
 	return ret;
 }

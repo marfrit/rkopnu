@@ -95,8 +95,15 @@ int rkopnu_ioctl_mem_create(struct drm_device *dev, void *data, struct drm_file 
 	ret = drm_mm_insert_node_generic(&priv->mm, &bo->mm, bo->size,
 					 PAGE_SIZE, 0, 0);
 	mutex_unlock(&priv->mm_lock);
-	if (ret)
+	if (ret) {
+		/* Most likely IOMMU VA-aperture exhaustion/fragmentation over a
+		 * long-lived server (the "works for one, dies after N" mode at
+		 * large contexts). Log the request size so it is diagnosable.
+		 * (Fable review, risk 3.) */
+		dev_warn(dev->dev, "rkopnu: MEM_CREATE VA insert failed (%d) for %llu bytes\n",
+			 ret, (unsigned long long)bo->size);
 		goto err;
+	}
 
 	ret = iommu_map_sgtable(priv->domain->domain, bo->mm.start, shmem->sgt,
 				IOMMU_READ | IOMMU_WRITE);
