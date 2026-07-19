@@ -87,16 +87,17 @@ fdad0000 okay
 
 ## 2. Blacklist the in-tree rocket driver
 
-rkopnu binds the **same** DT `compatible` as the in-tree `rocket` driver (and, being a
-fork, currently registers a `platform_driver` still named `"rocket"`). Only one may bind
-the NPU. Blacklist the in-tree rocket so rkopnu is the one that loads:
+rkopnu registers its own `platform_driver` (name `"rkopnu"`) but matches the **same** DT
+`compatible` as the in-tree `rocket` driver, so both would try to bind the NPU. Blacklist
+the in-tree rocket so rkopnu wins the bind:
 
 ```
 echo 'blacklist rocket' | sudo tee /etc/modprobe.d/rkopnu.conf
 ```
 
-> Consequence of the shared name: `lsmod` shows `rkopnu`, but `dmesg`/sysfs still print
-> `rocket fdab0000.npu: …`. That's rkopnu's inherited driver name, not the in-tree rocket.
+> The distinct driver name means `lsmod`, `/sys/bus/platform/drivers/rkopnu`, and `dmesg`
+> (`rkopnu fdab0000.npu: …`) all agree — no collision with the in-tree rocket driver. The
+> DRM render-node driver name stays `rknpu` (librknnrt identifies its device by that).
 
 ## 3. Build and load rkopnu
 
@@ -111,9 +112,9 @@ Verify it bound all three cores and created a render node:
 
 ```
 $ dmesg | grep -i 'npu core'
-rocket fdab0000.npu: Rockchip NPU core 0 version: 1179210309
-rocket fdac0000.npu: Rockchip NPU core 1 version: 1179210309
-rocket fdad0000.npu: Rockchip NPU core 2 version: 1179210309
+rkopnu fdab0000.npu: Rockchip NPU core 0 version: 1179210309
+rkopnu fdac0000.npu: Rockchip NPU core 1 version: 1179210309
+rkopnu fdad0000.npu: Rockchip NPU core 2 version: 1179210309
 $ ls /dev/dri/renderD*          # one of these is the NPU
 ```
 
@@ -152,8 +153,8 @@ rising interrupt counts for the three `npu` IRQs in `/proc/interrupts`.
 ## Limitations / notes
 
 - Single-SoC RK3588 only. The register offsets and 3-core layout are RK3588-specific.
-- The `platform_driver` name is `"rocket"` (fork inheritance); rename + a distinct
-  `MODULE_ALIAS` is a clean-up TODO.
+- rkopnu and the in-tree rocket driver match the same DT `compatible`, so rocket must be
+  blacklisted for rkopnu to win the bind (see step 2).
 - Decode (single-token generation) is not NPU-accelerated — that's a property of the
   runtime, not this driver.
 

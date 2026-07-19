@@ -290,7 +290,17 @@ static struct platform_driver rocket_driver = {
 	.probe = rocket_probe,
 	.remove = rocket_remove,
 	.driver	 = {
-		.name = "rocket",
+		/*
+		 * "rkopnu", not "rocket": rkopnu is a fork of the in-tree rocket
+		 * driver but a distinct platform_driver. Using a distinct name
+		 * avoids the /sys/bus/platform/drivers/ name collision if the
+		 * in-tree rocket module is also present, and makes sysfs/dmesg
+		 * agree with the "rkopnu" module name. (The DRM driver name stays
+		 * "rknpu" — librknnrt identifies its device by that.) The in-tree
+		 * rocket still matches the same OF compatible, so it must be
+		 * blacklisted for rkopnu to win the NPU bind deterministically.
+		 */
+		.name = "rkopnu",
 		.pm = pm_ptr(&rocket_pm_ops),
 		.of_match_table = dt_match,
 	},
@@ -316,5 +326,5 @@ module_init(rocket_register);
 module_exit(rocket_unregister);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("DRM driver for the Rockchip NPU IP");
+MODULE_DESCRIPTION("rkopnu: vendor rknpu ioctl ABI on a mainline kernel (RK3588 NPU)");
 MODULE_AUTHOR("Tomeu Vizoso");
