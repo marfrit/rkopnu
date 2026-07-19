@@ -43,8 +43,6 @@ struct rocket_job {
 	u32 rk_pp_en;
 	u32 timeout_count;
 
-	u64 t_push; /* rkopnu perf-trace: ktime at drm_sched push */
-
 	/* Fence to be signaled by drm-sched once its done with the job */
 	struct dma_fence *inference_done_fence;
 

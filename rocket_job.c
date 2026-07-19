@@ -8,8 +8,6 @@
 #include <drm/drm_gem.h>
 #include <drm/rocket_accel.h>
 #include <linux/interrupt.h>
-#include <linux/ktime.h>
-#include <linux/atomic.h>
 #include <linux/iommu.h>
 #include <linux/platform_device.h>
 
@@ -24,14 +22,6 @@
 #include "rknpu_ioctl.h"
 
 #define JOB_TIMEOUT_MS 500
-
-/* rkopnu perf-trace: accumulate per-submit latency segments, dump every 512
- * completions. worker = push->run (drm_sched worker bounce); npu = run->hardirq
- * (submit + NPU compute); thread = hardirq->bottom-half (threaded-IRQ bounce). */
-static atomic64_t dbg_n;
-static atomic64_t dbg_worker_ns;
-static atomic64_t dbg_npu_ns;
-static atomic64_t dbg_thread_ns;
 
 static struct rocket_job *
 to_rocket_job(struct drm_sched_job *sched_job)
@@ -188,11 +178,6 @@ static void rocket_job_hw_submit(struct rocket_core *core, struct rocket_job *jo
 	rocket_pc_writel(core, TASK_DMA_BASE_ADDR, (u32)job->rk_task_base_addr);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x1);
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
-
-	if ((atomic64_read(&dbg_n) < 12))
-		dev_err(core->dev, "rkopnu HWSUB core%d mask=0x%x ncore=%u ts=%d tn=%d amount=%u imask=0x%x",
-			ci, job->rk_core_mask, job->rk_use_core_num, ts, tn,
-			first->regcfg_amount, last->int_mask);
 }
 
 static int rocket_acquire_object_fences(struct drm_gem_object **bos,
@@ -257,7 +242,6 @@ static int rocket_job_push(struct rocket_job *job)
 
 		kref_get(&job->refcount); /* put by scheduler job completion */
 
-		job->t_push = ktime_get_ns();
 		drm_sched_entity_push_job(&job->base);
 	}
 
@@ -384,8 +368,6 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 		}
 		if (!attach_err) {
 			core->in_flight_job = job;
-			core->t_run = ktime_get_ns();
-			atomic64_add(core->t_run - job->t_push, &dbg_worker_ns);
 			rocket_job_hw_submit(core, job);
 		}
 	}
@@ -416,9 +398,6 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 	 * meaningful "unit went idle" timestamp for the shared autosuspend
 	 * delay, not this core's own completion time.
 	 */
-	/* rkopnu perf-trace: threaded-IRQ bounce = hard-IRQ -> bottom-half. */
-	atomic64_add(ktime_get_ns() - core->t_hardirq, &dbg_thread_ns);
-
 	rocket_pc_writel(core, OPERATION_ENABLE, 0x0);
 	rocket_pc_writel(core, INTERRUPT_CLEAR, 0xffffffff);
 
@@ -433,17 +412,6 @@ static void rocket_job_handle_irq(struct rocket_core *core)
 			dma_fence_signal(core->in_flight_job->done_fence);
 			rocket_device_pm_put(core->rdev);
 			core->in_flight_job = NULL;
-
-			/* rkopnu perf-trace: dump averages every 512 completions */
-			if ((atomic64_inc_return(&dbg_n) & 511) == 0) {
-				s64 n = atomic64_read(&dbg_n);
-				dev_err(core->dev,
-					"rkopnu-trace n=%lld avg(us): worker=%lld npu=%lld thread=%lld",
-					n,
-					atomic64_read(&dbg_worker_ns) / n / 1000,
-					atomic64_read(&dbg_npu_ns) / n / 1000,
-					atomic64_read(&dbg_thread_ns) / n / 1000);
-			}
 		}
 }
 
@@ -542,9 +510,6 @@ static irqreturn_t rocket_job_irq_handler(int irq, void *data)
 	 * bits 30/31, not the DPU_0/1 bits (8/9) mainline rocket was RE'd against. */
 	if (!raw_status)
 		return IRQ_NONE;
-
-	core->t_hardirq = ktime_get_ns();
-	atomic64_add(core->t_hardirq - core->t_run, &dbg_npu_ns);
 
 	rocket_pc_writel(core, INTERRUPT_MASK, 0x0);
 

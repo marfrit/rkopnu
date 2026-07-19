@@ -44,10 +44,6 @@ struct rocket_core {
 	struct iommu_group *iommu_group;
 	struct rocket_iommu_domain *attached_domain; /* rkopnu: keep attached across jobs */
 
-	/* rkopnu perf-trace: latency-segment timestamps (ns) */
-	u64 t_run;     /* set just before hw_submit (drm_sched worker) */
-	u64 t_hardirq; /* set in the hard IRQ top-half on completion */
-
 	/*
 	 * struct device for this core's rockchip-iommu (looked up via the
 	 * "iommus" DT phandle). Used only to poll for its runtime-PM suspend
