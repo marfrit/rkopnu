@@ -356,14 +356,41 @@ static struct dma_fence *rocket_job_run(struct drm_sched_job *sched_job)
 	 * Re-attach only on a domain change. The attach/detach of attached_domain
 	 * is done under job_lock so it is serialized against the detach in
 	 * rocket_job_close() and rocket_reset() (Fable review).
+	 *
+	 * rkopnu multi-domain deadlock hardening: also serialize the actual
+	 * iommu_detach_group()/iommu_attach_group() calls against rdev->pm_lock
+	 * (the SAME lock rocket_device_pm_get()/put() above already use to
+	 * serialize power-unit resume/release across all 3 cores as a unit).
+	 * rk_iommu_attach_device()/rk_iommu_disable() (rockchip-iommu.c) do their
+	 * own clk_bulk_enable()/clk_bulk_disable() on the IOMMU submodule's
+	 * clocks, which share upstream PMU/clock-tree infrastructure with the
+	 * NPU cores' own power-domain resume -- the exact hazard class this file
+	 * already documents and handles for cross-core clock/power-domain gating
+	 * ("a sibling core's independent gating can race this core's in-flight
+	 * DMA traffic", rocket_device_pm_get() above). Without this, a domain
+	 * switch on one core's IOMMU submodule could race a power-unit
+	 * transition happening concurrently for another core, both touching the
+	 * shared NIU/PMU. Suspected root cause of the 30B/multi-domain prefill
+	 * hang seen in testing (D-state on dma_fence_default_wait, no TDR
+	 * recovery) -- not confirmed by live tracing (lockdown blocked
+	 * /proc/PID/stack), so this is a principled hardening measure pending
+	 * validation on the next reboot-test, not a proven fix.
+	 *
+	 * pm_lock is safe to take here: rocket_device_pm_get() above already
+	 * acquired and released it (it never holds pm_lock across its own
+	 * return), so this is a fresh, non-recursive acquisition. Lock order is
+	 * always job_lock -> pm_lock in this file (see rocket_reset() below,
+	 * updated the same way) -- never the reverse -- so no new AB-BA risk.
 	 */
 
 	scoped_guard(mutex, &core->job_lock) {
 		if (core->attached_domain != job->domain) {
-			if (core->attached_domain)
-				iommu_detach_group(NULL, core->iommu_group);
-			attach_err = iommu_attach_group(job->domain->domain,
-							core->iommu_group);
+			scoped_guard(mutex, &rdev->pm_lock) {
+				if (core->attached_domain)
+					iommu_detach_group(NULL, core->iommu_group);
+				attach_err = iommu_attach_group(job->domain->domain,
+								core->iommu_group);
+			}
 			core->attached_domain = attach_err ? NULL : job->domain;
 		}
 		if (!attach_err) {
@@ -432,8 +459,15 @@ rocket_reset(struct rocket_core *core, struct drm_sched_job *bad)
 		if (core->in_flight_job)
 			rocket_device_pm_put_noidle(core->rdev);
 
+		/* rkopnu multi-domain deadlock hardening: same rdev->pm_lock
+		 * serialization as rocket_job_run() above, and for the same
+		 * reason -- this detach must not race a power-unit transition
+		 * on the shared NIU/PMU either. rocket_device_pm_put_noidle()
+		 * just above already released pm_lock before returning, so
+		 * this is a fresh acquisition, not held across the call above. */
 		if (core->attached_domain) {
-			iommu_detach_group(NULL, core->iommu_group);
+			scoped_guard(mutex, &core->rdev->pm_lock)
+				iommu_detach_group(NULL, core->iommu_group);
 			core->attached_domain = NULL;
 		}
 
@@ -889,8 +923,33 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 	if (rjob->inference_done_fence) {
 		long tout = dma_fence_wait_timeout(rjob->inference_done_fence,
 						   false, msecs_to_jiffies(5000));
-		if (tout <= 0)
+		if (tout <= 0) {
+			/*
+			 * Pre-existing bug (not introduced by multi-domain): this
+			 * branch used to log a warning and then fall through to
+			 * "args->task_counter = args->task_number; ret = 0;"
+			 * regardless -- i.e. reported SUCCESS to userspace even
+			 * though the job never actually finished (or we couldn't
+			 * prove it did). That silently hands back stale/garbage
+			 * output instead of an error librknnrt/ggml-rknpu2 could
+			 * detect and propagate. Report the real outcome instead:
+			 * -ETIMEDOUT if our bound simply expired, or dma_fence's
+			 * own negative error code if it has one (e.g. -ECANCELED
+			 * from a TDR-driven reset abandoning the job).
+			 *
+			 * Do NOT drm_sched_job_cleanup() here (that's what
+			 * out_cleanup below is for): the job was successfully
+			 * pushed onto the scheduler above, so it is still live
+			 * there (or being unwound by TDR) -- the scheduler holds
+			 * its own kref (see rocket_job_push()) and will properly
+			 * finish/free it via the normal completion or
+			 * timedout_job() path. Just drop our own reference.
+			 */
 			drm_warn(dev, "rkopnu: submit wait unfinished (%ld)\n", tout);
+			ret = tout == 0 ? -ETIMEDOUT : (int)tout;
+			args->task_counter = 0;
+			goto out_put_job;
+		}
 	}
 
 	args->task_counter = args->task_number;
