@@ -149,6 +149,19 @@ rising interrupt counts for the three `npu` IRQs in `/proc/interrupts`.
   three cores run (an early version let drm_sched pick a core and left one idle).
 - Board-to-board differences are **DDR-bandwidth**-bound, not clock: a GenBook (LPDDR5)
   runs ~49.5 tok/s vs a Rock 5 ITX (LPDDR5-6400) at ~51.5, both with the NPU at 1 GHz.
+- **Multi-domain (>4GiB NPU-resident models), Rock 5 ITX, live-validated:** rkopnu honours
+  the vendor `iommu_domain_id` (client-side `librknnrt`/RKNN-matmul callers, e.g.
+  ggml-rknpu2's `IOMMUDomainManager`, already spread allocations across up to 16
+  independent IOMMU paging domains — each domain gets its own ~4GiB IOVA aperture, the
+  real ceiling coming from the vendor RKNN matmul API's int32 B-matrix offsets, not IOMMU
+  hardware). pp512 prefill: Qwen2.5-3B-Instruct f16 (5.75 GiB, ≥2 domains) = 76.75 tok/s
+  native (no INT8 fallback needed); Qwen3-30B-A3B-Instruct-2507 UD-Q4_K_XL (16.47 GiB,
+  ~5 domains, MoE cross-domain expert routing) = 16.70 tok/s, exit 0, zero
+  SError/panic/hung-task/VA-insert. A domain switch on one core's IOMMU submodule shares
+  clock/PMU infrastructure with the cores' own power-domain resume (see
+  `rocket_device_pm_get()`'s device-global `pm_lock`, used for exactly this class of
+  cross-core race elsewhere in this driver); serializing IOMMU attach/detach against that
+  same lock was what took the 30B case from a permanent D-state hang to a clean run.
 
 ## Limitations / notes
 
