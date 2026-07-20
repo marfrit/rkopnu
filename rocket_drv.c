@@ -57,17 +57,103 @@ rocket_iommu_domain_create(struct device *dev)
 	return domain;
 }
 
+/*
+ * rkopnu multi-domain: get-or-create the domain for domain_id in this fd's
+ * pool. Out-of-range or negative ids (old callers, or a malformed vendor
+ * struct) fall back to domain 0 rather than erroring -- domain 0 always
+ * exists once anything has been allocated, matching the pre-multi-domain
+ * behaviour for callers that never think about domain ids at all.
+ *
+ * iommu_paging_domain_alloc() can sleep, so the allocation itself happens
+ * outside domains_lock; the lock only guards the pool array's slot
+ * install/lookup. That opens a create-create race between two threads
+ * requesting the same not-yet-existing domain id concurrently, handled by
+ * re-checking the slot after allocating and discarding the loser's spare
+ * domain via rocket_iommu_domain_put() (kref drops straight to 0, since
+ * nothing else has seen it yet).
+ */
 struct rocket_iommu_domain *
-rocket_iommu_domain_get(struct rocket_file_priv *rocket_priv)
+rocket_iommu_domain_get(struct rocket_file_priv *rocket_priv, s32 domain_id)
 {
-	kref_get(&rocket_priv->domain->kref);
-	return rocket_priv->domain;
+	struct rocket_iommu_domain *domain, *candidate;
+	u64 start, end;
+
+	if (domain_id < 0 || domain_id >= ROCKET_MAX_IOMMU_DOMAINS)
+		domain_id = 0;
+
+	mutex_lock(&rocket_priv->domains_lock);
+	domain = rocket_priv->domains[domain_id];
+	if (domain)
+		kref_get(&domain->kref);
+	mutex_unlock(&rocket_priv->domains_lock);
+	if (domain)
+		return domain;
+
+	candidate = rocket_iommu_domain_create(rocket_priv->rdev->cores[0].dev);
+	if (IS_ERR(candidate))
+		return candidate;
+
+	candidate->id = domain_id;
+	start = candidate->domain->geometry.aperture_start;
+	end = candidate->domain->geometry.aperture_end;
+	drm_mm_init(&candidate->mm, start, end - start + 1);
+	mutex_init(&candidate->mm_lock);
+
+	mutex_lock(&rocket_priv->domains_lock);
+	domain = rocket_priv->domains[domain_id];
+	if (domain) {
+		/* Lost the race: another thread installed this id first. */
+		kref_get(&domain->kref);
+		mutex_unlock(&rocket_priv->domains_lock);
+		rocket_iommu_domain_put(candidate);
+		return domain;
+	}
+
+	rocket_priv->domains[domain_id] = candidate;
+	/* Caller's reference, on top of the pool's own (kref=1 from create,
+	 * dropped by rocket_iommu_domains_close() at postclose). */
+	kref_get(&candidate->kref);
+	mutex_unlock(&rocket_priv->domains_lock);
+
+	return candidate;
 }
 
 void
 rocket_iommu_domain_put(struct rocket_iommu_domain *domain)
 {
+	/* NULL-tolerant like dma_fence_put()/kfree() elsewhere in this driver:
+	 * rocket_job_cleanup() unconditionally puts job->domain, which is NULL
+	 * on a job that failed before rocket_iommu_domain_get() ever ran
+	 * (e.g. drm_sched_job_init() failure) or that failed the get() itself. */
+	if (!domain)
+		return;
 	kref_put(&domain->kref, rocket_iommu_domain_destroy);
+}
+
+void
+rocket_iommu_domains_close(struct rocket_file_priv *rocket_priv)
+{
+	unsigned int i;
+
+	for (i = 0; i < ROCKET_MAX_IOMMU_DOMAINS; i++) {
+		struct rocket_iommu_domain *domain = rocket_priv->domains[i];
+
+		if (!domain)
+			continue;
+
+		rocket_priv->domains[i] = NULL;
+
+		/*
+		 * Safe only because DRM core has already released this file's
+		 * GEM objects before calling .postclose (rocket_postclose()
+		 * calls us), so every domain's drm_mm is provably empty here --
+		 * same invariant the original single-domain code relied on for
+		 * its drm_mm_takedown() at postclose.
+		 */
+		drm_mm_takedown(&domain->mm);
+		mutex_destroy(&domain->mm_lock);
+		rocket_iommu_domain_put(domain);
+	}
 }
 
 static int
@@ -75,7 +161,6 @@ rocket_open(struct drm_device *dev, struct drm_file *file)
 {
 	struct rocket_device *rdev = to_rocket_device(dev);
 	struct rocket_file_priv *rocket_priv;
-	u64 start, end;
 	int ret;
 
 	if (!try_module_get(THIS_MODULE))
@@ -88,30 +173,20 @@ rocket_open(struct drm_device *dev, struct drm_file *file)
 	}
 
 	rocket_priv->rdev = rdev;
-	rocket_priv->domain = rocket_iommu_domain_create(rdev->cores[0].dev);
-	if (IS_ERR(rocket_priv->domain)) {
-		ret = PTR_ERR(rocket_priv->domain);
-		goto err_free;
-	}
+	mutex_init(&rocket_priv->domains_lock);
+	/* Domains are created lazily on first MEM_CREATE/SUBMIT reference to a
+	 * given iommu_domain_id -- see rocket_iommu_domain_get(). */
 
 	file->driver_priv = rocket_priv;
 
-	start = rocket_priv->domain->domain->geometry.aperture_start;
-	end = rocket_priv->domain->domain->geometry.aperture_end;
-	drm_mm_init(&rocket_priv->mm, start, end - start + 1);
-	mutex_init(&rocket_priv->mm_lock);
-
 	ret = rocket_job_open(rocket_priv);
 	if (ret)
-		goto err_mm_takedown;
+		goto err_destroy_lock;
 
 	return 0;
 
-err_mm_takedown:
-	mutex_destroy(&rocket_priv->mm_lock);
-	drm_mm_takedown(&rocket_priv->mm);
-	rocket_iommu_domain_put(rocket_priv->domain);
-err_free:
+err_destroy_lock:
+	mutex_destroy(&rocket_priv->domains_lock);
 	kfree(rocket_priv);
 err_put_mod:
 	module_put(THIS_MODULE);
@@ -124,9 +199,8 @@ rocket_postclose(struct drm_device *dev, struct drm_file *file)
 	struct rocket_file_priv *rocket_priv = file->driver_priv;
 
 	rocket_job_close(rocket_priv);
-	mutex_destroy(&rocket_priv->mm_lock);
-	drm_mm_takedown(&rocket_priv->mm);
-	rocket_iommu_domain_put(rocket_priv->domain);
+	rocket_iommu_domains_close(rocket_priv);
+	mutex_destroy(&rocket_priv->domains_lock);
 	kfree(rocket_priv);
 	module_put(THIS_MODULE);
 }

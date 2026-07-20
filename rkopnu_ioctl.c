@@ -81,31 +81,47 @@ int rkopnu_ioctl_mem_create(struct drm_device *dev, void *data, struct drm_file 
 	gem = &shmem->base;
 	bo = to_rocket_bo(gem);
 	bo->driver_priv = priv;
-	bo->domain = rocket_iommu_domain_get(priv);
+	/*
+	 * rkopnu multi-domain: honor the vendor iommu_domain_id instead of
+	 * collapsing every allocation into one shared domain. This is the
+	 * field librknnrt already fills in from rknn_matmul_info.iommu_domain_id
+	 * (see ggml-rknpu2's IOMMUDomainManager) -- previously read and dropped
+	 * on the floor here, which made every allocation land in domain 0
+	 * regardless of what userspace asked for, capping total NPU-resident
+	 * memory at one domain's ~4GiB IOVA aperture.
+	 */
+	bo->domain = rocket_iommu_domain_get(priv, args->iommu_domain_id);
+	if (IS_ERR(bo->domain)) {
+		ret = PTR_ERR(bo->domain);
+		bo->domain = NULL;
+		goto err;
+	}
 	bo->size = args->size;
 	bo->offset = 0;
 
 	sgt = drm_gem_shmem_get_pages_sgt(shmem);
 	if (IS_ERR(sgt)) {
 		ret = PTR_ERR(sgt);
-		goto err;
+		goto err_put_domain;
 	}
 
-	mutex_lock(&priv->mm_lock);
-	ret = drm_mm_insert_node_generic(&priv->mm, &bo->mm, bo->size,
+	mutex_lock(&bo->domain->mm_lock);
+	ret = drm_mm_insert_node_generic(&bo->domain->mm, &bo->mm, bo->size,
 					 PAGE_SIZE, 0, 0);
-	mutex_unlock(&priv->mm_lock);
+	mutex_unlock(&bo->domain->mm_lock);
 	if (ret) {
 		/* Most likely IOMMU VA-aperture exhaustion/fragmentation over a
 		 * long-lived server (the "works for one, dies after N" mode at
-		 * large contexts). Log the request size so it is diagnosable.
-		 * (Fable review, risk 3.) */
-		dev_warn(dev->dev, "rkopnu: MEM_CREATE VA insert failed (%d) for %llu bytes\n",
-			 ret, (unsigned long long)bo->size);
-		goto err;
+		 * large contexts), or genuine exhaustion of this domain's ~4GiB
+		 * budget if userspace kept packing it past capacity. Log the
+		 * domain id too now that there's more than one. (Fable review,
+		 * risk 3.) */
+		dev_warn(dev->dev, "rkopnu: MEM_CREATE VA insert failed (%d) for %llu bytes (domain %d)\n",
+			 ret, (unsigned long long)bo->size, bo->domain->id);
+		goto err_put_domain;
 	}
 
-	ret = iommu_map_sgtable(priv->domain->domain, bo->mm.start, shmem->sgt,
+	ret = iommu_map_sgtable(bo->domain->domain, bo->mm.start, shmem->sgt,
 				IOMMU_READ | IOMMU_WRITE);
 	if (ret < 0 || (u64)ret < args->size) {
 		ret = -ENOMEM;
@@ -125,11 +141,23 @@ int rkopnu_ioctl_mem_create(struct drm_device *dev, void *data, struct drm_file 
 	return 0;
 
 err_unmap:
-	iommu_unmap(priv->domain->domain, bo->mm.start, bo->size);
+	iommu_unmap(bo->domain->domain, bo->mm.start, bo->size);
 err_remove_node:
-	mutex_lock(&priv->mm_lock);
+	mutex_lock(&bo->domain->mm_lock);
 	drm_mm_remove_node(&bo->mm);
-	mutex_unlock(&priv->mm_lock);
+	mutex_unlock(&bo->domain->mm_lock);
+err_put_domain:
+	/*
+	 * Pre-existing single-domain code never dropped this reference on any
+	 * error path (the fd's one domain outlived every failed allocation
+	 * anyway). Now that a domain can be created lazily just for this
+	 * failed BO, leaking it here would leak a whole IOMMU paging domain
+	 * (page tables) per failed MEM_CREATE -- worse under exactly the
+	 * memory-pressure conditions that make MEM_CREATE fail in the first
+	 * place. Drop it explicitly.
+	 */
+	rocket_iommu_domain_put(bo->domain);
+	bo->domain = NULL;
 err:
 	drm_gem_shmem_object_free(gem);
 	return ret;

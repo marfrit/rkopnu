@@ -613,7 +613,7 @@ void rocket_job_close(struct rocket_file_priv *rocket_priv)
 {
 	struct rocket_device *rdev = rocket_priv->rdev;
 	struct drm_sched_entity *entity = &rocket_priv->sched_entity;
-	unsigned int core;
+	unsigned int core, i;
 
 	for (core = 0; core < rdev->num_cores && core < 3; core++)
 		drm_sched_entity_destroy(&rocket_priv->core_entity[core]);
@@ -629,14 +629,23 @@ void rocket_job_close(struct rocket_file_priv *rocket_priv)
 	 * frees it. Skipping this frees the domain while it is still attached
 	 * (rk_iommu_domain_free WARN) and leaves core->attached_domain dangling ->
 	 * use-after-free / panic when the next client's job touches it.
+	 *
+	 * rkopnu multi-domain: a core's attached_domain can now be any one of
+	 * this fd's (up to 16) domains, not the single one it used to have --
+	 * check them all. A core can only ever have one domain attached at a
+	 * time, so at most one of these can match; break once found.
 	 */
 	for (core = 0; core < rdev->num_cores; core++) {
 		struct rocket_core *rcore = &rdev->cores[core];
 
 		scoped_guard(mutex, &rcore->job_lock) {
-			if (rcore->attached_domain == rocket_priv->domain) {
-				iommu_detach_group(NULL, rcore->iommu_group);
-				rcore->attached_domain = NULL;
+			for (i = 0; i < ROCKET_MAX_IOMMU_DOMAINS; i++) {
+				if (rocket_priv->domains[i] &&
+				    rcore->attached_domain == rocket_priv->domains[i]) {
+					iommu_detach_group(NULL, rcore->iommu_group);
+					rcore->attached_domain = NULL;
+					break;
+				}
 			}
 		}
 	}
@@ -694,7 +703,15 @@ static int rocket_ioctl_submit_job(struct drm_device *dev, struct drm_file *file
 
 	rjob->out_bo_count = job->out_bo_handle_count;
 
-	rjob->domain = rocket_iommu_domain_get(file_priv);
+	/* rkopnu multi-domain: native rocket uAPI has no domain-id field;
+	 * always domain 0 (see the matching comment in rocket_gem.c -- this
+	 * ioctl is unregistered/unreachable today, kept correct not deleted). */
+	rjob->domain = rocket_iommu_domain_get(file_priv, 0);
+	if (IS_ERR(rjob->domain)) {
+		ret = PTR_ERR(rjob->domain);
+		rjob->domain = NULL;
+		goto out_cleanup_job;
+	}
 
 	ret = rocket_job_push(rjob);
 	if (ret)
@@ -835,7 +852,27 @@ int rkopnu_ioctl_submit(struct drm_device *dev, void *data, struct drm_file *fil
 
 	rjob->in_bo_count = 0;
 	rjob->out_bo_count = 0;
-	rjob->domain = rocket_iommu_domain_get(file_priv);
+	/*
+	 * rkopnu multi-domain: this is the field librknnrt actually threads
+	 * through from rknn_matmul_info.iommu_domain_id at rknn_matmul_create()
+	 * time, for the *same* matmul context whose weight buffer was created
+	 * against that domain id via MEM_CREATE. Honoring it here is what
+	 * makes rocket_job_run()'s existing "reattach only on domain change"
+	 * logic (rocket_job.c) actually switch domains instead of always
+	 * seeing the same one.
+	 */
+	rjob->domain = rocket_iommu_domain_get(file_priv, (s32)args->iommu_domain_id);
+	if (IS_ERR(rjob->domain)) {
+		/* drm_sched_job_init() already succeeded above (this check runs
+		 * after it), so unlike the two out_put_job jumps elsewhere in
+		 * this function, this one must go through out_cleanup so
+		 * drm_sched_job_cleanup() actually runs -- straight to
+		 * out_put_job here would skip it and leak/imbalance whatever
+		 * job_init set up. */
+		ret = PTR_ERR(rjob->domain);
+		rjob->domain = NULL;
+		goto out_cleanup;
+	}
 
 	ret = rocket_job_push(rjob);
 	if (ret)

@@ -14,7 +14,6 @@
 static void rocket_gem_bo_free(struct drm_gem_object *obj)
 {
 	struct rocket_gem_object *bo = to_rocket_bo(obj);
-	struct rocket_file_priv *rocket_priv = bo->driver_priv;
 	size_t unmapped;
 
 	drm_WARN_ON(obj->dev, refcount_read(&bo->base.pages_use_count) > 1);
@@ -22,9 +21,11 @@ static void rocket_gem_bo_free(struct drm_gem_object *obj)
 	unmapped = iommu_unmap(bo->domain->domain, bo->mm.start, bo->size);
 	drm_WARN_ON(obj->dev, unmapped != bo->size);
 
-	mutex_lock(&rocket_priv->mm_lock);
+	/* rkopnu multi-domain: this BO's own domain owns its drm_mm now, not
+	 * a single per-fd allocator (rocket_drv.h). */
+	mutex_lock(&bo->domain->mm_lock);
 	drm_mm_remove_node(&bo->mm);
-	mutex_unlock(&rocket_priv->mm_lock);
+	mutex_unlock(&bo->domain->mm_lock);
 
 	rocket_iommu_domain_put(bo->domain);
 	bo->domain = NULL;
@@ -75,25 +76,39 @@ int rocket_ioctl_create_bo(struct drm_device *dev, void *data, struct drm_file *
 	rkt_obj = to_rocket_bo(gem_obj);
 
 	rkt_obj->driver_priv = rocket_priv;
-	rkt_obj->domain = rocket_iommu_domain_get(rocket_priv);
+	/*
+	 * rkopnu multi-domain: the native rocket uAPI (this function) has no
+	 * domain-id concept in its own struct -- it predates multi-domain and
+	 * isn't wired into rkopnu_ioctls[] (only the rknpu-compat ABI in
+	 * rkopnu_ioctl.c is registered; this path is currently unreachable
+	 * from userspace). Always domain 0 here, matching old single-domain
+	 * behaviour, so this stays correct (if it's ever re-registered) rather
+	 * than silently wrong.
+	 */
+	rkt_obj->domain = rocket_iommu_domain_get(rocket_priv, 0);
+	if (IS_ERR(rkt_obj->domain)) {
+		ret = PTR_ERR(rkt_obj->domain);
+		rkt_obj->domain = NULL;
+		goto err;
+	}
 	rkt_obj->size = args->size;
 	rkt_obj->offset = 0;
 
 	sgt = drm_gem_shmem_get_pages_sgt(shmem_obj);
 	if (IS_ERR(sgt)) {
 		ret = PTR_ERR(sgt);
-		goto err;
+		goto err_put_domain;
 	}
 
-	mutex_lock(&rocket_priv->mm_lock);
-	ret = drm_mm_insert_node_generic(&rocket_priv->mm, &rkt_obj->mm,
+	mutex_lock(&rkt_obj->domain->mm_lock);
+	ret = drm_mm_insert_node_generic(&rkt_obj->domain->mm, &rkt_obj->mm,
 					 rkt_obj->size, PAGE_SIZE,
 					 0, 0);
-	mutex_unlock(&rocket_priv->mm_lock);
+	mutex_unlock(&rkt_obj->domain->mm_lock);
 	if (ret)
-		goto err;
+		goto err_put_domain;
 
-	ret = iommu_map_sgtable(rocket_priv->domain->domain,
+	ret = iommu_map_sgtable(rkt_obj->domain->domain,
 				rkt_obj->mm.start,
 				shmem_obj->sgt,
 				IOMMU_READ | IOMMU_WRITE);
@@ -118,13 +133,17 @@ int rocket_ioctl_create_bo(struct drm_device *dev, void *data, struct drm_file *
 	return 0;
 
 err_unmap:
-	iommu_unmap(rocket_priv->domain->domain,
+	iommu_unmap(rkt_obj->domain->domain,
 		    rkt_obj->mm.start, rkt_obj->size);
 
 err_remove_node:
-	mutex_lock(&rocket_priv->mm_lock);
+	mutex_lock(&rkt_obj->domain->mm_lock);
 	drm_mm_remove_node(&rkt_obj->mm);
-	mutex_unlock(&rocket_priv->mm_lock);
+	mutex_unlock(&rkt_obj->domain->mm_lock);
+
+err_put_domain:
+	rocket_iommu_domain_put(rkt_obj->domain);
+	rkt_obj->domain = NULL;
 
 err:
 	drm_gem_shmem_object_free(gem_obj);
