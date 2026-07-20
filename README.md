@@ -154,14 +154,19 @@ rising interrupt counts for the three `npu` IRQs in `/proc/interrupts`.
   ggml-rknpu2's `IOMMUDomainManager`, already spread allocations across up to 16
   independent IOMMU paging domains — each domain gets its own ~4GiB IOVA aperture, the
   real ceiling coming from the vendor RKNN matmul API's int32 B-matrix offsets, not IOMMU
-  hardware). pp512 prefill: Qwen2.5-3B-Instruct f16 (5.75 GiB, ≥2 domains) = 76.75 tok/s
-  native (no INT8 fallback needed); Qwen3-30B-A3B-Instruct-2507 UD-Q4_K_XL (16.47 GiB,
-  ~5 domains, MoE cross-domain expert routing) = 16.70 tok/s, exit 0, zero
-  SError/panic/hung-task/VA-insert. A domain switch on one core's IOMMU submodule shares
-  clock/PMU infrastructure with the cores' own power-domain resume (see
+  hardware). pp512 / tg128: Qwen2.5-3B-Instruct f16 (5.75 GiB, ≥2 domains) = 76.92 / 3.36
+  tok/s native (no INT8 fallback needed); Qwen3-30B-A3B-Instruct-2507 UD-Q4_K_XL
+  (16.47 GiB, ~5 domains, MoE cross-domain expert routing) = 16.68 / 4.63 tok/s, exit 0,
+  zero SError/panic/hung-task/VA-insert. A domain switch on one core's IOMMU submodule
+  shares clock/PMU infrastructure with the cores' own power-domain resume (see
   `rocket_device_pm_get()`'s device-global `pm_lock`, used for exactly this class of
   cross-core race elsewhere in this driver); serializing IOMMU attach/detach against that
   same lock was what took the 30B case from a permanent D-state hang to a clean run.
+  Notably the 30B MoE **decodes faster than the dense 3B-f16** (4.63 vs 3.36 tok/s):
+  only ~3B params are active per token in the MoE vs the 3B-f16's fully memory-bound
+  dense weight read, so decode tracks active-parameter count, not total resident weight.
+  ~16.7 tok/s prefill / ~4.6 tok/s decode makes the 30B genuinely usable on-NPU, not just
+  "it fits."
 
 ## Limitations / notes
 
